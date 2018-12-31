@@ -1,17 +1,15 @@
 #define GLFW_INCLUDE_ES2
 #include <GLFW/glfw3.h>
 
-#include <stdbool.h>
-
 #define WIN_W 0
 #define WIN_H 0
 #define WIN_T "Wire Bending Machine Simulator"
 #define OGL_API GLFW_OPENGL_ES_API
 #define OGL_V 20
-#define VSYNC true
+#define VSYNC 1
 #define AA 4
 
-static GLFWwindow*mkW(int w,int h,const char*t,int api,int v,bool vs,int aa);
+static GLFWwindow*mkW(int w,int h,const char*t,int api,int v,int vs,int aa);
 
 int main(void) {
     glfwInit();
@@ -24,10 +22,10 @@ int main(void) {
     glfwTerminate();
 }
 
-static GLFWwindow*mkW(int w,int h,const char*t,int api,int v,bool vs,int aa) {
+static GLFWwindow*mkW(int w,int h,const char*t,int api,int v,int vs,int aa) {
     GLFWwindow *win;
-    int width, height;
-    GLFWmonitor *monitor;
+    int width = w, height = h;
+    GLFWmonitor *monitor = NULL;
 
     glfwWindowHint(GLFW_CLIENT_API, api);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, v / 10);
@@ -43,15 +41,11 @@ static GLFWwindow*mkW(int w,int h,const char*t,int api,int v,bool vs,int aa) {
         glfwWindowHint(GLFW_GREEN_BITS, vidmode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, vidmode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, vidmode->refreshRate);
-    } else {
-        width = w;
-        height = h;
-        monitor = NULL;
     }
 
     win = glfwCreateWindow(width, height, t, monitor, NULL);
     glfwMakeContextCurrent(win);
-    glfwSwapInterval(vs ? 1 : 0);
+    glfwSwapInterval(vs);
 
     return win;
 }
