@@ -1,8 +1,9 @@
 .POSIX:
 
 CC=cc
-CFLAGS=-O
-LDFLAGS=-s
+CFLAGS=-O -I/usr/local/include -I/usr/X11R6/include
+LDLIBS=-lglfw -lGLESv2
+LDFLAGS=-s -L/usr/local/lib -L /usr/X11R6/lib $(LDLIBS)
 
 OBJ=src/main.o
 DST=wbmsim
