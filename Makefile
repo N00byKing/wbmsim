@@ -5,12 +5,15 @@ CFLAGS=-O -I/usr/local/include -I/usr/X11R6/include
 LDLIBS=-lglfw -lGLESv2
 LDFLAGS=-s -L/usr/local/lib -L /usr/X11R6/lib $(LDLIBS)
 
-OBJ=src/main.o
+SRCOBJ=src/main.o
+LIBOBJ=lib/x.o
+OBJ=$(SRCOBJ) $(LIBOBJ)
 DST=wbmsim
 
 $(DST): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ)
 
+$(OBJ): lib/lib.h
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
