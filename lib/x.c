@@ -33,7 +33,6 @@ void xInit(const char *title) {
 
     glfwInit();
     x.win = mkWin(title, GLFW_OPENGL_ES_API, 20, 1, 16);
-    glfwSetInputMode(x.win, GLFW_STICKY_KEYS, GLFW_TRUE);
 
     x.prog = mkShd(VERT, FRAG);
     glUseProgram(x.prog);
