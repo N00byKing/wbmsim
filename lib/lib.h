@@ -4,11 +4,41 @@
 typedef struct {
     float x, y;
     uint8_t r, g, b;
-} XTriV;
+} XVertex;
 void xInit(const char *title);
 void xExit(void);
 float xAR(void);
 void xPipe(float mulX, float mulY, float addX, float addY);
-void xTris(size_t ni, const uint32_t *i, const XTriV *v);
+void xTris(size_t ni, const uint32_t *i, const XVertex *v);
 void xSwap(uint8_t r, uint8_t g, uint8_t b);
 int xOver(void);
+
+typedef struct {
+    size_t ni, mi, nv, mv;
+    uint32_t *i;
+    XVertex *v;
+} Batch;
+Batch batchNew(void);
+void batchDel(Batch *b);
+void batchClear(Batch *b);
+void batchDraw(const Batch *b);
+void batchAny(Batch*b,size_t ni,const uint32_t*i,size_t nv,const XVertex*v);
+void batchRect(Batch *b, const float *xywh, const uint8_t*rgb);
+void batchRectLine(Batch*b,const float*xywh,float ti,float to,const uint8_t*rgb);
+void batchLine(Batch*b,float x,float y,float a,float l,float t,const uint8_t*rgb);
+void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb);
+void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,const uint8_t*rgb);
+void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rgb);
+void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size_t n,const uint8_t*rgb);
+// batchLineLine
+// batchRingLine
+// batchRoundRect
+// batchRoundRectLine
+// batchTri
+// batchTriLine
+// batchEllipse
+// batchEllipseSlice
+// batchEllipseRing
+// batchEllipseRingSlice
+// scissors
+// matrix

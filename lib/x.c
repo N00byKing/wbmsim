@@ -63,7 +63,7 @@ void xPipe(float mulX, float mulY, float addX, float addY) {
     glUniform2f(x.uAdd, addX, addY);
 }
 
-void xTris(size_t ni, const uint32_t *i, const XTriV *v) {
+void xTris(size_t ni, const uint32_t *i, const XVertex *v) {
     glEnableVertexAttribArray(x.aPos);
     glEnableVertexAttribArray(x.aClr);
 

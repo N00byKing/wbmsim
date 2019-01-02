@@ -1,2 +1,3 @@
 wbmsim
 *.o
+*.core
