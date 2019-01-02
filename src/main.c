@@ -45,6 +45,8 @@ int main(void) {
     while (!xOver()) {
         xPipe(s.zoom / xAR(), s.zoom, 0, 0);
 
+        batchLine(&b, -xAR() / s.zoom, 0, 0, xAR() / s.zoom, 1, s.white);
+
         if (s.status == STATUS_ANIMATING) {
             float progress = (xTime() - s.animationStart) / s.animationDuration;
             progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
