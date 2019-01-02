@@ -33,6 +33,7 @@ void xInit(const char *title) {
 
     glfwInit();
     x.win = mkWin(title, GLFW_OPENGL_ES_API, 20, 1, 16);
+    glfwSetInputMode(x.win, GLFW_STICKY_KEYS, GLFW_TRUE);
 
     x.prog = mkShd(VERT, FRAG);
     glUseProgram(x.prog);
@@ -91,6 +92,14 @@ void xSwap(uint8_t r, uint8_t g, uint8_t b) {
 
 int xOver(void) {
     return glfwWindowShouldClose(x.win);
+}
+
+double xTime(void) {
+    return glfwGetTime();
+}
+
+int xKey(int key) {
+    return glfwGetKey(x.win, key);
 }
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
