@@ -30,15 +30,9 @@ void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb);
 void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,const uint8_t*rgb);
 void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rgb);
 void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size_t n,const uint8_t*rgb);
-// batchLineLine
-// batchRingLine
-// batchRoundRect
-// batchRoundRectLine
-// batchTri
-// batchTriLine
-// batchEllipse
-// batchEllipseSlice
-// batchEllipseRing
-// batchEllipseRingSlice
-// scissors
-// matrix
+
+void matScl(float *m, float x, float y);
+void matTrans(float *m, float x, float y);
+void matRot(float *m, float a);
+void matMul(float *m, const float *a, const float *b);
+void matMulVec(float *mv, const float *m, const float *v);
