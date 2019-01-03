@@ -22,6 +22,8 @@
 #define PI 3.14159265358979
 enum {UP, DOWN, LEFT, RIGHT};
 
+// TODO: remove magic drawing numbers!!!
+
 static struct {
     int animating, wire, action;
     double animationStart;
@@ -29,7 +31,9 @@ static struct {
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void stopAnimation(void);
-static void batchStatic(Batch *b);
+static void batchStatic(Batch *b, float ar);
+static void batchAnimated(Batch *b, float progress, float ar);
+static void reactToInput(GLFWwindow *win);
 
 int main(void) {
     Batch b = batchNew();
@@ -43,12 +47,9 @@ int main(void) {
         int w, h;
         glfwGetFramebufferSize(win, &w, &h);
         float ar = (float)w / (float)h;
-
         rClear(0, 0, 0);
         rViewport(0, 0, w, h);
         rPipe(ZOOM / ar, ZOOM, 0, 0);
-
-        batchLine(&b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
 
         if (s.animating) {
             float progress = (glfwGetTime() - s.animationStart) / ANIMATION_DURATION;
@@ -56,110 +57,17 @@ int main(void) {
             if (progress >= 1) {
                 stopAnimation();
             } else {
-                float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
-                matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI / 2);
-                matMulVec(mv1, m, v1);
-                matMulVec(mv3, m, v3);
-                matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI / 2);
-                matMulVec(mv2, m, v2);
-                matMulVec(mv4, m, v4);
-                mv1[1] += 1;
-                mv3[1] += 1;
-                mv2[1] -= 1;
-                mv4[1] -= 1;
-                switch (s.action) {
-
-                    case UP:
-                        switch (s.wire) {
-                            case UP:
-                                batchRingSlice(&b, 0, 1, 1, 1, -PI / 2, PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case DOWN:
-                                batchRingSlice(&b, mv1[0], mv1[1], 1, 1, PI/2+CLAMP(0, progress * 2, 1)*PI/2, -PI/2+CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                                batchRingSlice(&b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case RIGHT:
-                                batchRingSlice(&b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                                batchLine(&b, mv3[0], mv3[1], CLAMP(0, progress * 2, 1) *  PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
-                                break;
-                            case LEFT:
-                                break;
-                        }
-                        batchCircle(&b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        batchCircle(&b, mv1[0], mv1[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        break;
-
-                    case DOWN:
-                        switch (s.wire) {
-                            case UP:
-                                batchRingSlice(&b, mv2[0], mv2[1], 1, 1, -PI/2-CLAMP(0, progress * 2, 1)*PI/2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                                batchRingSlice(&b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case DOWN:
-                                batchRingSlice(&b, 0,-1, 1, 1, PI/2,-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case RIGHT:
-                                batchRingSlice(&b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                                batchLine(&b, mv4[0], mv4[1], CLAMP(0, progress * 2, 1) * -PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
-                                break;
-                            case LEFT:
-                                break;
-                        }
-                        batchCircle(&b, mv2[0], mv2[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        batchCircle(&b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        break;
-
-                    case RIGHT:
-                        batchLine(&b, 0, 0, 0, progress * PI / 2, 1, WIRE_COLOR);
-                        batchCircle(&b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        batchCircle(&b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        break;
-
-                    case LEFT:
-                        switch (s.wire) {
-                            case UP:
-                                batchRingSlice(&b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case DOWN:
-                                batchRingSlice(&b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                                break;
-                            case RIGHT:
-                                batchLine(&b, 0, 0, 0, PI / 2 - progress * PI / 2, 1, WIRE_COLOR);
-                                break;
-                            case LEFT:
-                                break;
-                        }
-                        batchCircle(&b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        batchCircle(&b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-                        break;
-                }
+                batchAnimated(&b, progress, ar);
             }
         }
-
         if (!s.animating) {
-            batchStatic(&b);
+            batchStatic(&b, ar);
         }
-
         batchDraw(&b);
         batchClear(&b);
 
         glfwSwapBuffers(win);
-
-        if (!s.animating) {
-            if (glfwGetKey(win, GLFW_KEY_UP) || glfwGetKey(win, GLFW_KEY_DOWN) || glfwGetKey(win, GLFW_KEY_LEFT) || glfwGetKey(win, GLFW_KEY_RIGHT)) {
-                s.animating = 1;
-                s.animationStart = glfwGetTime();
-            }
-            if (glfwGetKey(win, GLFW_KEY_UP)) {
-                s.action = UP;
-            } else if (glfwGetKey(win, GLFW_KEY_DOWN)) {
-                s.action = DOWN;
-            } else if (glfwGetKey(win, GLFW_KEY_LEFT)) {
-                s.action = LEFT;
-            } else if (glfwGetKey(win, GLFW_KEY_RIGHT)) {
-                s.action = RIGHT;
-            }
-        }
+        reactToInput(win);
     }
 
     rExit();
@@ -200,7 +108,8 @@ static void stopAnimation(void) {
     }
 }
 
-static void batchStatic(Batch *b) {
+static void batchStatic(Batch *b, float ar) {
+    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
     if (s.wire == UP) {
         batchRingSlice(b, 0, 1, 1, 1,-PI/2, PI/2, CIRCLE_QUALITY, WIRE_COLOR);
     } else if (s.wire == DOWN) {
@@ -210,4 +119,106 @@ static void batchStatic(Batch *b) {
     }
     batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
     batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+}
+
+static void batchAnimated(Batch *b, float progress, float ar) {
+    // TODO: refactor this steaming pile of shit
+    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
+    float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI / 2);
+    matMulVec(mv1, m, v1);
+    matMulVec(mv3, m, v3);
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI / 2);
+    matMulVec(mv2, m, v2);
+    matMulVec(mv4, m, v4);
+    mv1[1] += 1;
+    mv3[1] += 1;
+    mv2[1] -= 1;
+    mv4[1] -= 1;
+    switch (s.action) {
+
+        case UP:
+            switch (s.wire) {
+                case UP:
+                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case DOWN:
+                    batchRingSlice(b, mv1[0], mv1[1], 1, 1, PI/2+CLAMP(0, progress * 2, 1)*PI/2, -PI/2+CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case RIGHT:
+                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchLine(b, mv3[0], mv3[1], CLAMP(0, progress * 2, 1) *  PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
+                    break;
+                case LEFT:
+                    break;
+            }
+            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, mv1[0], mv1[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            break;
+
+        case DOWN:
+            switch (s.wire) {
+                case UP:
+                    batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-CLAMP(0, progress * 2, 1)*PI/2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case DOWN:
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case RIGHT:
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchLine(b, mv4[0], mv4[1], CLAMP(0, progress * 2, 1) * -PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
+                    break;
+                case LEFT:
+                    break;
+            }
+            batchCircle(b, mv2[0], mv2[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            break;
+
+        case RIGHT:
+            batchLine(b, 0, 0, 0, progress * PI / 2, 1, WIRE_COLOR);
+            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            break;
+
+        case LEFT:
+            switch (s.wire) {
+                case UP:
+                    batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case DOWN:
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    break;
+                case RIGHT:
+                    batchLine(b, 0, 0, 0, PI / 2 - progress * PI / 2, 1, WIRE_COLOR);
+                    break;
+                case LEFT:
+                    break;
+            }
+            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            break;
+    }
+}
+
+static void reactToInput(GLFWwindow *win) {
+    int up = glfwGetKey(win, GLFW_KEY_UP);
+    int down = glfwGetKey(win, GLFW_KEY_DOWN);
+    int left = glfwGetKey(win, GLFW_KEY_LEFT);
+    int right = glfwGetKey(win, GLFW_KEY_RIGHT);
+    if (!s.animating && (up || down || left || right)) {
+        s.animating = 1;
+        s.animationStart = glfwGetTime();
+        if (up) {
+            s.action = UP;
+        } else if (down) {
+            s.action = DOWN;
+        } else if (left) {
+            s.action = LEFT;
+        } else {
+            s.action = RIGHT;
+        }
+    }
 }
