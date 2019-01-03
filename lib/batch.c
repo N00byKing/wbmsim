@@ -21,10 +21,10 @@ void batchClear(Batch *b) {
 }
 
 void batchDraw(const Batch *b) {
-    xTris(b->ni, b->i, b->v);
+    rTris(b->ni, b->i, b->v);
 }
 
-void batchAny(Batch*b,size_t ni,const uint32_t*i,size_t nv,const XVertex*v) {
+void batchAny(Batch*b,size_t ni,const uint32_t*i,size_t nv,const RVertex*v) {
     if (b->mi < b->ni + ni) {
         if (b->mi == 0) {
             b->mi = 1;
@@ -55,12 +55,12 @@ void batchAny(Batch*b,size_t ni,const uint32_t*i,size_t nv,const XVertex*v) {
 }
 
 void batchRect(Batch *b, const float *xywh, const uint8_t *rgb) {
-    XVertex v0 = {xywh[0],           xywh[1],           rgb[0], rgb[1], rgb[2]};
-    XVertex v1 = {xywh[0] + xywh[2], xywh[1],           rgb[0], rgb[1], rgb[2]};
-    XVertex v2 = {xywh[0] + xywh[2], xywh[1] + xywh[3], rgb[0], rgb[1], rgb[2]};
-    XVertex v3 = {xywh[0],           xywh[1] + xywh[3], rgb[0], rgb[1], rgb[2]};
+    RVertex v0 = {xywh[0],           xywh[1],           rgb[0], rgb[1], rgb[2]};
+    RVertex v1 = {xywh[0] + xywh[2], xywh[1],           rgb[0], rgb[1], rgb[2]};
+    RVertex v2 = {xywh[0] + xywh[2], xywh[1] + xywh[3], rgb[0], rgb[1], rgb[2]};
+    RVertex v3 = {xywh[0],           xywh[1] + xywh[3], rgb[0], rgb[1], rgb[2]};
     uint32_t i[] = {b->nv+0,b->nv+1,b->nv+2,b->nv+2,b->nv+3,b->nv+0};
-    batchAny(b, 6, i, 4, (XVertex[]){v0, v1, v2, v3});
+    batchAny(b, 6, i, 4, (RVertex[]){v0, v1, v2, v3});
 }
 
 void batchRectLine(Batch*b,const float*xywh,float ti,float to,const uint8_t*rgb){
@@ -76,16 +76,16 @@ void batchLine(Batch*b,float x,float y,float a,float l,float t,const uint8_t*rgb
     float X = x + cosf(a) * l;
     float Y = y + sinf(a) * l;
     uint32_t i[] = {b->nv+0,b->nv+1,b->nv+2,b->nv+2,b->nv+3,b->nv+0};
-    XVertex v0 = {x - dx, y + dy, rgb[0], rgb[1], rgb[2]};
-    XVertex v1 = {x + dx, y - dy, rgb[0], rgb[1], rgb[2]};
-    XVertex v2 = {X + dx, Y - dy, rgb[0], rgb[1], rgb[2]};
-    XVertex v3 = {X - dx, Y + dy, rgb[0], rgb[1], rgb[2]};
-    batchAny(b, 6, i, 4, (XVertex[]){v0, v1, v2, v3});
+    RVertex v0 = {x - dx, y + dy, rgb[0], rgb[1], rgb[2]};
+    RVertex v1 = {x + dx, y - dy, rgb[0], rgb[1], rgb[2]};
+    RVertex v2 = {X + dx, Y - dy, rgb[0], rgb[1], rgb[2]};
+    RVertex v3 = {X - dx, Y + dy, rgb[0], rgb[1], rgb[2]};
+    batchAny(b, 6, i, 4, (RVertex[]){v0, v1, v2, v3});
 }
 
 void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb) {
     uint32_t *i = malloc(n * 3 * sizeof(*i));
-    XVertex *v = malloc((n + 1) * sizeof(*v));
+    RVertex *v = malloc((n + 1) * sizeof(*v));
 
     for (size_t j = 0; j < n - 1; ++j) {
         i[j * 3 + 0] = b->nv + 0;
@@ -97,9 +97,9 @@ void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb) {
     i[n * 3 - 1] = b->nv + 1;
 
     float da = PI * 2 / n;
-    v[0] = (XVertex){x, y, rgb[0], rgb[1], rgb[2]};
+    v[0] = (RVertex){x, y, rgb[0], rgb[1], rgb[2]};
     for (size_t j = 0; j < n; ++j) {
-        v[j + 1] = (XVertex){x + cosf(da * j) * r, y + sinf(da * j) * r, rgb[0], rgb[1], rgb[2]};
+        v[j + 1] = (RVertex){x + cosf(da * j) * r, y + sinf(da * j) * r, rgb[0], rgb[1], rgb[2]};
     }
 
     batchAny(b, n * 3, i, n + 1, v);
@@ -107,7 +107,7 @@ void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb) {
 
 void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,const uint8_t*rgb){
     uint32_t *i = malloc((n - 1) * 3 * sizeof(*i));
-    XVertex *v = malloc((n + 1) * sizeof(*v));
+    RVertex *v = malloc((n + 1) * sizeof(*v));
 
     for (size_t j = 0; j < n - 1; ++j) {
         i[j * 3 + 0] = b->nv + 0;
@@ -116,9 +116,9 @@ void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,cons
     }
 
     float da = a / (n - 1);
-    v[0] = (XVertex){x, y, rgb[0], rgb[1], rgb[2]};
+    v[0] = (RVertex){x, y, rgb[0], rgb[1], rgb[2]};
     for (size_t j = 0; j < n; ++j) {
-        v[j + 1] = (XVertex){x + cosf(da * j + o) * r, y + sinf(da * j + o) * r, rgb[0], rgb[1], rgb[2]};
+        v[j + 1] = (RVertex){x + cosf(da * j + o) * r, y + sinf(da * j + o) * r, rgb[0], rgb[1], rgb[2]};
     }
 
     batchAny(b, (n - 1) * 3, i, n + 1, v);
@@ -126,7 +126,7 @@ void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,cons
 
 void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rgb){
     uint32_t *i = malloc(n * 6 * sizeof(*i));
-    XVertex *v = malloc(n * 2 * sizeof(*v));
+    RVertex *v = malloc(n * 2 * sizeof(*v));
 
     for (size_t j = 0; j < n - 1; ++j) {
         i[j * 6 + 0] = b->nv + j * 2 + 0;
@@ -147,8 +147,8 @@ void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rg
     float r0 = r - t / 2;
     float r1 = r + t / 2;
     for (size_t j = 0; j < n; ++j) {
-        v[j * 2 + 0] = (XVertex){x + cosf(da * j) * r0, y + sinf(da * j) * r0, rgb[0], rgb[1], rgb[2]};
-        v[j * 2 + 1] = (XVertex){x + cosf(da * j) * r1, y + sinf(da * j) * r1, rgb[0], rgb[1], rgb[2]};
+        v[j * 2 + 0] = (RVertex){x + cosf(da * j) * r0, y + sinf(da * j) * r0, rgb[0], rgb[1], rgb[2]};
+        v[j * 2 + 1] = (RVertex){x + cosf(da * j) * r1, y + sinf(da * j) * r1, rgb[0], rgb[1], rgb[2]};
     }
 
     batchAny(b, n * 6, i, n * 2, v);
@@ -156,7 +156,7 @@ void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rg
 
 void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size_t n,const uint8_t*rgb){
     uint32_t *i = malloc((n - 1) * 6 * sizeof(*i));
-    XVertex *v = malloc(n * 2 * sizeof(*v));
+    RVertex *v = malloc(n * 2 * sizeof(*v));
 
     for (size_t j = 0; j < n - 1; ++j) {
         i[j * 6 + 0] = b->nv + j * 2 + 0;
@@ -171,8 +171,8 @@ void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size
     float r0 = r - t / 2;
     float r1 = r + t / 2;
     for (size_t j = 0; j < n; ++j) {
-        v[j * 2 + 0] = (XVertex){x + cosf(da * j + o) * r0, y + sinf(da * j + o) * r0, rgb[0], rgb[1], rgb[2]};
-        v[j * 2 + 1] = (XVertex){x + cosf(da * j + o) * r1, y + sinf(da * j + o) * r1, rgb[0], rgb[1], rgb[2]};
+        v[j * 2 + 0] = (RVertex){x + cosf(da * j + o) * r0, y + sinf(da * j + o) * r0, rgb[0], rgb[1], rgb[2]};
+        v[j * 2 + 1] = (RVertex){x + cosf(da * j + o) * r1, y + sinf(da * j + o) * r1, rgb[0], rgb[1], rgb[2]};
     }
 
     batchAny(b, (n - 1) * 6, i, n * 2, v);
