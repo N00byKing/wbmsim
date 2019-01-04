@@ -18,6 +18,7 @@ typedef struct {
     RVertex *v;
 } Batch;
 Batch batchNew(void);
+// TODO: library routines to unbatch stuff
 void batchDel(Batch *b);
 void batchClear(Batch *b);
 void batchDraw(const Batch *b);

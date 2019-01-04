@@ -17,22 +17,26 @@
 #define WIRE_COLOR (uint8_t[]){255,255,255}
 #define CIRCLE_COLOR  (uint8_t[]){128,128,128}
 #define ANIMATION_DURATION 1.0
-#define ZOOM 0.5
+#define ZOOM 0.25
 #define CIRCLE_QUALITY 40
 #define PI 3.14159265358979
 enum {UP, DOWN, LEFT, RIGHT};
 #define MAX_WIRE_LEN 1000
 
 // TODO: remove magic drawing numbers!!!
+// TODO: the whole wire should be reconstructed every frame 60 frames per second to avoid floating point innacuracy addup
 
 static struct {
     int animating, wire[MAX_WIRE_LEN], wireLen, action;
     double animationStart;
-} s = {.animating = 0, .wireLen = 0};
+    Batch b;
+} s = {.animating = 0, .wireLen = 0, .b = {0,0,0,0,NULL,NULL}};
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
+static void renewGlobalBatch(void);
 static void stopAnimation(void);
 static void batchStatic(Batch *b, float ar);
+static void batchStaticActiveWire(Batch *b);
 static void batchAnimated(Batch *b, float progress, float ar);
 static void reactToInput(GLFWwindow *win);
 
@@ -56,6 +60,7 @@ int main(void) {
             float progress = (glfwGetTime() - s.animationStart) / ANIMATION_DURATION;
             progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
             if (progress >= 1) {
+                renewGlobalBatch();
                 stopAnimation();
             } else {
                 batchAnimated(&b, progress, ar);
@@ -89,11 +94,73 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
     return win;
+}
+
+static void renewGlobalBatch(void) {
+    int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
+    if (wire == LEFT) {
+        return;
+    }
+
+    if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
+        float a = (wire == RIGHT)
+                ? (s.action == UP) ? PI/2 : -PI/2
+                : (s.action == UP) ? PI   : -PI;
+        float m[9], m1[9], m2[9];
+        matTrans(m1, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
+        matRot(m2, a);
+        matMul(m, m2, m1);
+        matTrans(m1, 1, wire != RIGHT ? 0 : s.action == UP ? 1.5 : -1.5);
+        matMul(m2, m1, m);
+        for (size_t i = 0; i < s.b.nv; ++i) {
+            float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
+            matMulVec(mv, m2, v);
+            s.b.v[i].x = mv[0];
+            s.b.v[i].y = mv[1];
+        }
+    } else if (s.action == LEFT && s.wireLen > 1) {
+        if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN){
+            s.b.nv -= CIRCLE_QUALITY * 2;
+            s.b.ni -= (CIRCLE_QUALITY - 1) * 6;
+        } else {
+            s.b.nv -= 4;
+            s.b.ni -= 6;
+        }
+        if (wire == RIGHT) {
+            for (size_t i = 0; i < s.b.nv; ++i) {
+                s.b.v[i].x -= PI / 2;
+            }
+        } else {
+            float m0[9], m1[9], m2[9];
+            matTrans(m0, 1, wire == UP ? -1 : 1);
+            matRot(m1, wire == UP ? PI/2*3 : PI/2);
+            matMul(m2, m1, m0);
+            matTrans(m1, 0, wire == UP ? 2 : -2);
+            matMul(m0, m1, m2);
+            for (size_t i = 0; i < s.b.nv; ++i) {
+                float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
+                matMulVec(mv, m0, v);
+                s.b.v[i].x = mv[0];
+                s.b.v[i].y = mv[1];
+            }
+        }
+    } else if (s.action == RIGHT) {
+        batchStaticActiveWire(&s.b);
+        float m[9];
+        matTrans(m, PI/2, 0);
+        for (size_t i = 0; i < s.b.nv; ++i) {
+            float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
+            matMulVec(mv, m, v);
+            s.b.v[i].x = mv[0];
+            s.b.v[i].y = mv[1];
+        }
+    }
+    // TODO: one matrix transformation loop for all cases
 }
 
 static void stopAnimation(void) {
@@ -111,6 +178,13 @@ static void stopAnimation(void) {
 
 static void batchStatic(Batch *b, float ar) {
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
+    batchStaticActiveWire(b);
+    batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+    batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+    batchDraw(&s.b);
+}
+
+static void batchStaticActiveWire(Batch *b) {
     if (s.wireLen > 0 && s.wire[s.wireLen - 1] == UP) {
         batchRingSlice(b, 0, 1, 1, 1,-PI/2, PI/2, CIRCLE_QUALITY, WIRE_COLOR);
     } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == DOWN) {
@@ -118,8 +192,6 @@ static void batchStatic(Batch *b, float ar) {
     } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == RIGHT) {
         batchLine(b, 0, 0, 0, PI/2, 1, WIRE_COLOR);
     }
-    batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-    batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
 }
 
 static void batchAnimated(Batch *b, float progress, float ar) {
