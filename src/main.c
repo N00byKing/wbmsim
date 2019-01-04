@@ -21,13 +21,14 @@
 #define CIRCLE_QUALITY 40
 #define PI 3.14159265358979
 enum {UP, DOWN, LEFT, RIGHT};
+#define MAX_WIRE_LEN 1000
 
 // TODO: remove magic drawing numbers!!!
 
 static struct {
-    int animating, wire, action;
+    int animating, wire[MAX_WIRE_LEN], wireLen, action;
     double animationStart;
-} s = {.animating = 0, .wire = DOWN};
+} s = {.animating = 0, .wireLen = 0};
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void stopAnimation(void);
@@ -97,24 +98,24 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
 
 static void stopAnimation(void) {
     s.animating = 0;
-    if (s.action == UP && s.wire != LEFT) {
-        s.wire = UP;
-    } else if (s.action == DOWN && s.wire != LEFT) {
-        s.wire = DOWN;
-    } else if (s.action == RIGHT) {
-        s.wire = RIGHT;
-    } else if (s.action == LEFT) {
-        s.wire = LEFT;
+    if (s.action == UP && s.wireLen > 0) {
+        s.wire[s.wireLen - 1] = UP;
+    } else if (s.action == DOWN && s.wireLen > 0) {
+        s.wire[s.wireLen - 1] = DOWN;
+    } else if (s.action == RIGHT && s.wireLen < MAX_WIRE_LEN) {
+        s.wire[s.wireLen++] = RIGHT;
+    } else if (s.action == LEFT && s.wireLen > 0) {
+        --s.wireLen;
     }
 }
 
 static void batchStatic(Batch *b, float ar) {
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
-    if (s.wire == UP) {
+    if (s.wireLen > 0 && s.wire[s.wireLen - 1] == UP) {
         batchRingSlice(b, 0, 1, 1, 1,-PI/2, PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-    } else if (s.wire == DOWN) {
+    } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == DOWN) {
         batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-    } else if (s.wire == RIGHT) {
+    } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == RIGHT) {
         batchLine(b, 0, 0, 0, PI/2, 1, WIRE_COLOR);
     }
     batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
@@ -135,10 +136,11 @@ static void batchAnimated(Batch *b, float progress, float ar) {
     mv3[1] += 1;
     mv2[1] -= 1;
     mv4[1] -= 1;
+    int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
     switch (s.action) {
 
         case UP:
-            switch (s.wire) {
+            switch (wire) {
                 case UP:
                     batchRingSlice(b, 0, 1, 1, 1, -PI / 2, PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
                     break;
@@ -158,7 +160,7 @@ static void batchAnimated(Batch *b, float progress, float ar) {
             break;
 
         case DOWN:
-            switch (s.wire) {
+            switch (wire) {
                 case UP:
                     batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-CLAMP(0, progress * 2, 1)*PI/2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
                     batchRingSlice(b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
@@ -184,7 +186,7 @@ static void batchAnimated(Batch *b, float progress, float ar) {
             break;
 
         case LEFT:
-            switch (s.wire) {
+            switch (wire) {
                 case UP:
                     batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
                     break;
