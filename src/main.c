@@ -20,11 +20,8 @@
 #define ZOOM 0.25
 #define CIRCLE_QUALITY 40
 #define PI 3.14159265358979
-enum {UP, DOWN, LEFT, RIGHT};
 #define MAX_WIRE_LEN 1000
-
-// TODO: remove magic drawing numbers!!!
-// TODO: the whole wire should be reconstructed every frame 60 frames per second to avoid floating point innacuracy addup
+enum {UP, DOWN, LEFT, RIGHT};
 
 static struct {
     int animating, wire[MAX_WIRE_LEN], wireLen, action;
@@ -94,7 +91,7 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
@@ -107,22 +104,17 @@ static void renewGlobalBatch(void) {
         return;
     }
 
+    float m0[9], m1[9], m2[9];
+
     if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
         float a = (wire == RIGHT)
                 ? (s.action == UP) ? PI/2 : -PI/2
                 : (s.action == UP) ? PI   : -PI;
-        float m[9], m1[9], m2[9];
-        matTrans(m1, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
-        matRot(m2, a);
-        matMul(m, m2, m1);
+        matTrans(m0, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
+        matRot(m1, a);
+        matMul(m2, m1, m0);
         matTrans(m1, 1, wire != RIGHT ? 0 : s.action == UP ? 1.5 : -1.5);
-        matMul(m2, m1, m);
-        for (size_t i = 0; i < s.b.nv; ++i) {
-            float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
-            matMulVec(mv, m2, v);
-            s.b.v[i].x = mv[0];
-            s.b.v[i].y = mv[1];
-        }
+        matMul(m0, m1, m2);
     } else if (s.action == LEFT && s.wireLen > 1) {
         if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN){
             s.b.nv -= CIRCLE_QUALITY * 2;
@@ -132,9 +124,7 @@ static void renewGlobalBatch(void) {
             s.b.ni -= 6;
         }
         if (wire == RIGHT) {
-            for (size_t i = 0; i < s.b.nv; ++i) {
-                s.b.v[i].x -= PI / 2;
-            }
+            matTrans(m0, -PI/2, 0);
         } else {
             float m0[9], m1[9], m2[9];
             matTrans(m0, 1, wire == UP ? -1 : 1);
@@ -142,25 +132,18 @@ static void renewGlobalBatch(void) {
             matMul(m2, m1, m0);
             matTrans(m1, 0, wire == UP ? 2 : -2);
             matMul(m0, m1, m2);
-            for (size_t i = 0; i < s.b.nv; ++i) {
-                float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
-                matMulVec(mv, m0, v);
-                s.b.v[i].x = mv[0];
-                s.b.v[i].y = mv[1];
-            }
         }
     } else if (s.action == RIGHT) {
         batchStaticActiveWire(&s.b);
-        float m[9];
-        matTrans(m, PI/2, 0);
-        for (size_t i = 0; i < s.b.nv; ++i) {
-            float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
-            matMulVec(mv, m, v);
-            s.b.v[i].x = mv[0];
-            s.b.v[i].y = mv[1];
-        }
+        matTrans(m0, PI/2, 0);
     }
-    // TODO: one matrix transformation loop for all cases
+
+    for (size_t i = 0; i < s.b.nv; ++i) {
+        float mv[3], v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
+        matMulVec(mv, m0, v);
+        s.b.v[i].x = mv[0];
+        s.b.v[i].y = mv[1];
+    }
 }
 
 static void stopAnimation(void) {
