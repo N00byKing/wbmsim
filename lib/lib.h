@@ -18,7 +18,6 @@ typedef struct {
     RVertex *v;
 } Batch;
 Batch batchNew(void);
-// TODO: library routines to unbatch stuff
 void batchDel(Batch *b);
 void batchClear(Batch *b);
 void batchDraw(const Batch *b);
@@ -30,6 +29,14 @@ void batchCircle(Batch*b,float x,float y,float r,size_t n,const uint8_t*rgb);
 void batchPieSlice(Batch*b,float x,float y,float r,float o,float a,size_t n,const uint8_t*rgb);
 void batchRing(Batch*b,float x,float y,float r,float t,size_t n,const uint8_t*rgb);
 void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size_t n,const uint8_t*rgb);
+void batchClearAny(Batch*b,size_t ni,size_t nv);
+void batchClearRect(Batch *b);
+void batchClearRectLine(Batch*b);
+void batchClearLine(Batch*b);
+void batchClearCircle(Batch*b,size_t n);
+void batchClearPieSlice(Batch*b,size_t n);
+void batchClearRing(Batch*b,size_t n);
+void batchClearRingSlice(Batch*b,size_t n);
 
 void matScl(float *m, float x, float y);
 void matTrans(float *m, float x, float y);

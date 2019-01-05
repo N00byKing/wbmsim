@@ -107,21 +107,19 @@ static void renewGlobalBatch(void) {
     float m0[9], m1[9], m2[9];
 
     if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
-        float a = (wire == RIGHT)
-                ? (s.action == UP) ? PI/2 : -PI/2
-                : (s.action == UP) ? PI   : -PI;
+        float a = (s.action == RIGHT) ? PI / 2 : PI;
+        a = (s.action == UP) ? a : -a;
+
         matTrans(m0, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
         matRot(m1, a);
         matMul(m2, m1, m0);
         matTrans(m1, 1, wire != RIGHT ? 0 : s.action == UP ? 1.5 : -1.5);
         matMul(m0, m1, m2);
     } else if (s.action == LEFT && s.wireLen > 1) {
-        if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN){
-            s.b.nv -= CIRCLE_QUALITY * 2;
-            s.b.ni -= (CIRCLE_QUALITY - 1) * 6;
+        if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN) {
+            batchClearRingSlice(&s.b, CIRCLE_QUALITY);
         } else {
-            s.b.nv -= 4;
-            s.b.ni -= 6;
+            batchClearLine(&s.b);
         }
         if (wire == RIGHT) {
             matTrans(m0, -PI/2, 0);

@@ -178,3 +178,41 @@ void batchRingSlice(Batch*b,float x,float y,float r,float t,float o,float a,size
     batchAny(b, (n - 1) * 6, i, n * 2, v);
 }
 
+void batchClearAny(Batch*b,size_t ni,size_t nv) {
+    b->ni -= ni;
+    b->nv -= nv;
+}
+
+void batchClearRect(Batch *b) {
+    b->ni -= 6;
+    b->nv -= 4;
+}
+
+void batchClearRectLine(Batch*b) {
+    b->ni -= 24;
+    b->nv -= 12;
+}
+
+void batchClearLine(Batch*b) {
+    batchClearRect(b);
+}
+
+void batchClearCircle(Batch*b,size_t n) {
+    b->ni -= n * 3;
+    b->nv -= n + 1;
+}
+
+void batchClearPieSlice(Batch*b,size_t n) {
+    b->ni -= (n - 1) * 3;
+    b->nv -= n + 1;
+}
+
+void batchClearRing(Batch*b,size_t n) {
+    b->ni -= n * 6;
+    b->nv -= n * 2;
+}
+
+void batchClearRingSlice(Batch*b,size_t n) {
+    b->ni -= (n - 1) * 6;
+    b->nv -= n * 2;
+}
