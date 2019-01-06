@@ -5,9 +5,7 @@
 
 #include <math.h>
 
-#define MIN(x,y) (x)<(y)?(x):(y)
-#define MAX(x,y) (x)>(y)?(x):(y)
-#define CLAMP(min,val,max)  (MIN(max,MAX(min,val)))
+#define MIN(x,y) ((x)<(y)?(x):(y))
 
 #define WIN_T "Wire Bending Machine Simulator"
 #define OGL_API GLFW_OPENGL_ES_API
@@ -16,7 +14,7 @@
 #define MSAA 16
 #define CLRL (uint8_t[]){255,255,255}
 #define CLRC  (uint8_t[]){128,128,128}
-#define DT 1.0
+#define DT 2
 #define ZOOM 0.25
 #define Q 40
 #define PI 3.14159265358979
@@ -37,6 +35,7 @@ static void batchStaticActiveWire(Batch *b);
 static void batchAnimated(Batch *b, float progress, float ar);
 static void batchAnimatedCircles(Batch *b, float progress);
 static void batchAnimatedActiveWire(Batch *b, float progress);
+static void batchAnimatedInactiveWire(Batch *b, float progress);
 static void reactToInput(GLFWwindow *win);
 
 int main(void) {
@@ -108,28 +107,59 @@ static void renewGlobalBatch(void) {
 
     float m0[9], m1[9], m2[9];
 
-    if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
-        float a = (wire == RIGHT) ? PI/2 : PI;
-        a = (s.action == UP) ? a : -a;
-
-        matTrans(m0, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
-        matRot(m1, a);
-        matMul(m2, m1, m0);
-        matTrans(m1, 1, wire != RIGHT ? 0 : s.action == UP ? 1.5 : -1.5);
-        matMul(m0, m1, m2);
-    } else if (s.action == LEFT && s.wireLen > 1) {
-        if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN) {
-            batchClearRingSlice(&s.b, Q);
+    if (s.action == UP) {
+        if (wire == RIGHT) {
+            matTrans(m0, -PI/2, 0);
+            matRot(m1, PI/2);
+            matMul(m2, m1, m0);
+            matTrans(m1, 1, 1);
+            matMul(m0, m1, m2);
+        } else if (wire == DOWN) {
+            matTrans(m0, -1, 1);
+            matRot(m1, PI);
+            matMul(m2, m1, m0);
+            matTrans(m1, 1, 1);
+            matMul(m0, m1, m2);
         } else {
+            return;
+        }
+    } else if (s.action == DOWN) {
+        if (wire == RIGHT) {
+            matTrans(m0, -PI/2, 0);
+            matRot(m1, -PI/2);
+            matMul(m2, m1, m0);
+            matTrans(m1, 1, -1);
+            matMul(m0, m1, m2);
+        } else if (wire == UP) {
+            matTrans(m0, -1, -1);
+            matRot(m1, -PI);
+            matMul(m2, m1, m0);
+            matTrans(m1, 1, -1);
+            matMul(m0, m1, m2);
+        } else {
+            return;
+        }
+    } else if (s.action == LEFT) {
+        if (s.wireLen <= 1) {
+            return;
+        } else if (s.wire[s.wireLen - 2] == RIGHT) {
             batchClearLine(&s.b);
+        } else {
+            batchClearRingSlice(&s.b, Q);
         }
         if (wire == RIGHT) {
             matTrans(m0, -PI/2, 0);
-        } else {
-            matTrans(m0, 1, wire == UP ? -1 : 1);
-            matRot(m1, wire == UP ? PI/2*3 : PI/2);
+        } else if (wire == UP) {
+            matTrans(m0, 1, -1);
+            matRot(m1, -PI/2);
             matMul(m2, m1, m0);
-            matTrans(m1, 0, wire == UP ? 2 : -2);
+            matTrans(m1, 0, 2);
+            matMul(m0, m1, m2);
+        } else {
+            matTrans(m0, 1, 1);
+            matRot(m1, PI/2);
+            matMul(m2, m1, m0);
+            matTrans(m1, 0, -2);
             matMul(m0, m1, m2);
         }
     } else if (s.action == RIGHT) {
@@ -178,8 +208,9 @@ static void batchStaticActiveWire(Batch *b) {
 
 static void batchAnimated(Batch *b, float progress, float ar) {
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
-    batchAnimatedCircles(b, progress);
     batchAnimatedActiveWire(b, progress);
+    batchAnimatedInactiveWire(b, progress);
+    batchAnimatedCircles(b, progress);
 }
 
 static void batchAnimatedCircles(Batch *b, float progress) {
@@ -223,12 +254,12 @@ static void batchAnimatedActiveWire(Batch *b, float progress) {
     matMulVec(mv2, m, v2);
     matMulVec(mv4, m, v4);
     mv1[1] += 1;
-    mv2[1] -= 1;
     mv3[1] += 1;
+    mv2[1] -= 1;
     mv4[1] -= 1;
 
     int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
-    float x = CLAMP(0, progress * 2, 1) * PI/2;
+    float x = MIN(progress * 2, 1) * PI/2;
 
     if (s.action == UP) {
         if (wire == UP) {
@@ -261,6 +292,126 @@ static void batchAnimatedActiveWire(Batch *b, float progress) {
     } else {
         batchLine(b, 0, 0, 0, progress * PI/2, 1, CLRL);
     }
+}
+
+static void batchAnimatedInactiveWire(Batch *b, float progress) {
+    float m0[9], m1[9], m2[9], mv1[3], mv2[3], mv3[3], mv4[3], mv5[3], mv6[3], mv7[3], mv8[3], mv9[3], mv0[3];;
+    int wire = s.wireLen < 1 ? LEFT : s.wire[s.wireLen - 1];
+    if (wire == LEFT) {
+        return;
+    }
+
+    float v1[] = {PI/2 * (1 - MIN(progress * 2, 1)), 0, 1};
+    float v2[] = {0, -1, 1};
+    float v3[] = {PI/2 * (1 - MIN(progress * 2, 1)), 0, 1};
+    float v4[] = {0,  1, 1};
+    float v5[] = {0, -2, 1};
+    float v6[] = {1,  0, 1};
+    float v7[] = {0,  2, 1};
+    float v8[] = {1, 0, 1};
+    float v9[] = {1, 0, 0};
+
+    matRot(m0, MIN(progress * 2, 1) *  PI/2);
+    matMulVec(mv1, m0, v1);
+    matMulVec(mv2, m0, v2);
+    matRot(m0, MIN(progress * 2, 1) * -PI/2);
+    matMulVec(mv3, m0, v3);
+    matMulVec(mv4, m0, v4);
+    matRot(m0, MIN(progress * 2, 1) *  PI/2);
+    matMulVec(mv5, m0, v5);
+    matRot(m0, MIN(progress * 2, 1) *  PI);
+    matMulVec(mv6, m0, v6);
+    matRot(m0, MIN(progress * 2, 1) *  -PI/2);
+    matMulVec(mv7, m0, v7);
+    matRot(m0, MIN(progress * 2, 1) *  -PI);
+    matMulVec(mv8, m0, v8);
+    matRot(m0, progress * -PI/2);
+    matMulVec(mv9, m0, v9);
+    matRot(m0, progress * PI/2);
+    matMulVec(mv0, m0, v9);
+    mv2[1] += 1;
+    mv4[1] -= 1;
+    mv5[1] += 1;
+    mv7[1] -= 1;
+    mv9[1] += 1;
+    mv0[1] -= 1;
+
+    batchAny(b, s.b.ni, NULL, s.b.nv, NULL);
+
+    if (s.action == UP) {
+        if (wire == RIGHT) {
+            matTrans(m0, -PI/2, 0);
+            matRot(m1, PI/2 * MIN(progress * 2, 1));
+            matMul(m2, m1, m0);
+            matTrans(m1, mv1[0] + mv2[0], mv1[1] + mv2[1]);
+            matMul(m0, m1, m2);
+        } else if (wire == DOWN) {
+            matTrans(m0, -1, 1);
+            matRot(m1, PI * MIN(progress * 2, 1));
+            matMul(m2, m1, m0);
+            matTrans(m1, mv5[0] + mv6[0], mv5[1] + mv6[1]);
+            matMul(m0, m1, m2);
+        } else {
+            matTrans(m0, 0, 0);
+        }
+    } else if (s.action == DOWN) {
+        if (wire == RIGHT) {
+            matTrans(m0, -PI/2, 0);
+            matRot(m1, -PI/2 * MIN(progress * 2, 1));
+            matMul(m2, m1, m0);
+            matTrans(m1, mv3[0] + mv4[0], mv3[1] + mv4[1]);
+            matMul(m0, m1, m2);
+        } else if (wire == UP) {
+            matTrans(m0, -1, -1);
+            matRot(m1, -PI * MIN(progress * 2, 1));
+            matMul(m2, m1, m0);
+            matTrans(m1, mv7[0] + mv8[0], mv7[1] + mv8[1]);
+            matMul(m0, m1, m2);
+        } else {
+            matTrans(m0, 0, 0);
+        }
+    } else if (s.action == LEFT) {
+        if (wire == UP) {
+            matTrans(m0, -1, -1);
+            matRot(m1, -PI/2 * progress);
+            matMul(m2, m1, m0);
+            matTrans(m1, mv9[0], mv9[1]);
+            matMul(m0, m1, m2);
+        } else if (wire == DOWN) {
+            matTrans(m0, -1, 1);
+            matRot(m1, PI/2 * progress);
+            matMul(m2, m1, m0);
+            matTrans(m1, mv0[0], mv0[1]);
+            matMul(m0, m1, m2);
+        } else {
+            matTrans(m0, -progress * PI/2, 0);
+        }
+    } else {
+        if (s.wire[s.wireLen - 1] == UP) {
+            batchRingSlice(b, progress * PI/2, 1, 1, 1,-PI/2, PI/2, Q, CLRL);
+        } else if (s.wire[s.wireLen - 1] == DOWN) {
+            batchRingSlice(b, progress * PI/2,-1, 1, 1, PI/2,-PI/2, Q, CLRL);
+        } else {
+            batchLine(b, progress * PI/2, 0, 0, PI/2, 1, CLRL);
+        }
+        matTrans(m0, progress * PI/2, 0);
+    }
+
+    for (size_t i = 0; i < s.b.ni; ++i) {
+        b->i[b->ni + i] = b->nv + s.b.i[i];
+    }
+    b->ni += s.b.ni;
+
+    for (size_t i = 0; i < s.b.nv; ++i) {
+        float v[] = {s.b.v[i].x, s.b.v[i].y, 1};
+        matMulVec(mv1, m0, v);
+        b->v[b->nv + i].x = mv1[0];
+        b->v[b->nv + i].y = mv1[1];
+        b->v[b->nv + i].r = CLRL[0];
+        b->v[b->nv + i].g = CLRL[1];
+        b->v[b->nv + i].b = CLRL[2];
+    }
+    b->nv += s.b.nv;
 }
 
 static void reactToInput(GLFWwindow *win) {
