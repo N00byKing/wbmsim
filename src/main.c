@@ -107,7 +107,7 @@ static void renewGlobalBatch(void) {
     float m0[9], m1[9], m2[9];
 
     if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
-        float a = (s.action == RIGHT) ? PI / 2 : PI;
+        float a = (wire == RIGHT) ? PI / 2 : PI;
         a = (s.action == UP) ? a : -a;
 
         matTrans(m0, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
