@@ -35,6 +35,7 @@ static void stopAnimation(void);
 static void batchStatic(Batch *b, float ar);
 static void batchStaticActiveWire(Batch *b);
 static void batchAnimated(Batch *b, float progress, float ar);
+static void batchAnimatedCircles(Batch *b, float progress);
 static void reactToInput(GLFWwindow *win);
 
 int main(void) {
@@ -178,6 +179,8 @@ static void batchStaticActiveWire(Batch *b) {
 static void batchAnimated(Batch *b, float progress, float ar) {
     // TODO: refactor this steaming pile of shit
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
+    batchAnimatedCircles(b, progress);
+
     float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
     matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
     matMulVec(mv1, m, v1);
@@ -211,8 +214,6 @@ static void batchAnimated(Batch *b, float progress, float ar) {
                 case LEFT:
                     break;
             }
-            batchCircle(b, 0,  1, 0.5, Q, CLRC);
-            batchCircle(b, mv1[0], mv1[1], 0.5, Q, CLRC);
             break;
 
         case DOWN:
@@ -231,14 +232,10 @@ static void batchAnimated(Batch *b, float progress, float ar) {
                 case LEFT:
                     break;
             }
-            batchCircle(b, mv2[0], mv2[1], 0.5, Q, CLRC);
-            batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
 
         case RIGHT:
             batchLine(b, 0, 0, 0, progress * PI/2, 1, CLRL);
-            batchCircle(b, 0,  1, 0.5, Q, CLRC);
-            batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
 
         case LEFT:
@@ -255,6 +252,33 @@ static void batchAnimated(Batch *b, float progress, float ar) {
                 case LEFT:
                     break;
             }
+            break;
+    }
+}
+
+static void batchAnimatedCircles(Batch *b, float progress) {
+    float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, mv1[3], mv2[3];
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
+    matMulVec(mv1, m, v1);
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI/2);
+    matMulVec(mv2, m, v2);
+    mv1[1] += 1;
+    mv2[1] -= 1;
+    int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
+    switch (s.action) {
+        case UP:
+            batchCircle(b, 0,  1, 0.5, Q, CLRC);
+            batchCircle(b, mv1[0], mv1[1], 0.5, Q, CLRC);
+            break;
+        case DOWN:
+            batchCircle(b, mv2[0], mv2[1], 0.5, Q, CLRC);
+            batchCircle(b, 0, -1, 0.5, Q, CLRC);
+            break;
+        case RIGHT:
+            batchCircle(b, 0,  1, 0.5, Q, CLRC);
+            batchCircle(b, 0, -1, 0.5, Q, CLRC);
+            break;
+        case LEFT:
             batchCircle(b, 0,  1, 0.5, Q, CLRC);
             batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
