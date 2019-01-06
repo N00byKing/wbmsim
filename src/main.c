@@ -14,11 +14,11 @@
 #define OGL_V 20
 #define VSYNC 1
 #define MSAA 16
-#define WIRE_COLOR (uint8_t[]){255,255,255}
-#define CIRCLE_COLOR  (uint8_t[]){128,128,128}
-#define ANIMATION_DURATION 1.0
+#define CLRL (uint8_t[]){255,255,255}
+#define CLRC  (uint8_t[]){128,128,128}
+#define DT 1.0
 #define ZOOM 0.25
-#define CIRCLE_QUALITY 40
+#define Q 40
 #define PI 3.14159265358979
 #define MAX_WIRE_LEN 1000
 enum {UP, DOWN, LEFT, RIGHT};
@@ -54,7 +54,7 @@ int main(void) {
         rPipe(ZOOM / ar, ZOOM, 0, 0);
 
         if (s.animating) {
-            float progress = (glfwGetTime() - s.animationStart) / ANIMATION_DURATION;
+            float progress = (glfwGetTime() - s.animationStart) / DT;
             progress = progress < 0 ? 0 : progress > 1 ? 1 : progress;
             if (progress >= 1) {
                 renewGlobalBatch();
@@ -107,7 +107,7 @@ static void renewGlobalBatch(void) {
     float m0[9], m1[9], m2[9];
 
     if ((s.action == UP && wire != UP) || (s.action == DOWN && wire != DOWN)) {
-        float a = (wire == RIGHT) ? PI / 2 : PI;
+        float a = (wire == RIGHT) ? PI/2 : PI;
         a = (s.action == UP) ? a : -a;
 
         matTrans(m0, (wire == RIGHT) ? -PI/2 - 0.5 : -1, 0);
@@ -117,7 +117,7 @@ static void renewGlobalBatch(void) {
         matMul(m0, m1, m2);
     } else if (s.action == LEFT && s.wireLen > 1) {
         if (s.wire[s.wireLen - 2] == UP || s.wire[s.wireLen - 2] == DOWN) {
-            batchClearRingSlice(&s.b, CIRCLE_QUALITY);
+            batchClearRingSlice(&s.b, Q);
         } else {
             batchClearLine(&s.b);
         }
@@ -158,31 +158,31 @@ static void stopAnimation(void) {
 }
 
 static void batchStatic(Batch *b, float ar) {
-    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
+    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
     batchStaticActiveWire(b);
-    batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-    batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+    batchCircle(b, 0,  1, 0.5, Q, CLRC);
+    batchCircle(b, 0, -1, 0.5, Q, CLRC);
     batchDraw(&s.b);
 }
 
 static void batchStaticActiveWire(Batch *b) {
     if (s.wireLen > 0 && s.wire[s.wireLen - 1] == UP) {
-        batchRingSlice(b, 0, 1, 1, 1,-PI/2, PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+        batchRingSlice(b, 0, 1, 1, 1,-PI/2, PI/2, Q, CLRL);
     } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == DOWN) {
-        batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+        batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, Q, CLRL);
     } else if (s.wireLen > 0 && s.wire[s.wireLen - 1] == RIGHT) {
-        batchLine(b, 0, 0, 0, PI/2, 1, WIRE_COLOR);
+        batchLine(b, 0, 0, 0, PI/2, 1, CLRL);
     }
 }
 
 static void batchAnimated(Batch *b, float progress, float ar) {
     // TODO: refactor this steaming pile of shit
-    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, WIRE_COLOR);
+    batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
     float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
-    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI / 2);
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
     matMulVec(mv1, m, v1);
     matMulVec(mv3, m, v3);
-    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI / 2);
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI/2);
     matMulVec(mv2, m, v2);
     matMulVec(mv4, m, v4);
     mv1[1] += 1;
@@ -190,70 +190,73 @@ static void batchAnimated(Batch *b, float progress, float ar) {
     mv2[1] -= 1;
     mv4[1] -= 1;
     int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
+
+    float x = CLAMP(0, progress * 2, 1) * PI/2;
+
     switch (s.action) {
 
         case UP:
             switch (wire) {
                 case UP:
-                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, PI/2, Q, CLRL);
                     break;
                 case DOWN:
-                    batchRingSlice(b, mv1[0], mv1[1], 1, 1, PI/2+CLAMP(0, progress * 2, 1)*PI/2, -PI/2+CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, mv1[0], mv1[1], 1, 1, PI/2+x, -PI/2+x, Q, CLRL);
+                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
                     break;
                 case RIGHT:
-                    batchRingSlice(b, 0, 1, 1, 1, -PI / 2, CLAMP(0, progress * 2, 1) * PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                    batchLine(b, mv3[0], mv3[1], CLAMP(0, progress * 2, 1) *  PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
+                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
+                    batchLine(b, mv3[0], mv3[1], x, PI/2-x, 1, CLRL);
                     break;
                 case LEFT:
                     break;
             }
-            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-            batchCircle(b, mv1[0], mv1[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, 0,  1, 0.5, Q, CLRC);
+            batchCircle(b, mv1[0], mv1[1], 0.5, Q, CLRC);
             break;
 
         case DOWN:
             switch (wire) {
                 case UP:
-                    batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-CLAMP(0, progress * 2, 1)*PI/2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-x, PI/2-x, Q, CLRL);
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
                     break;
                 case DOWN:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, Q, CLRL);
                     break;
                 case RIGHT:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2, CLAMP(0, progress * 2, 1) * -PI / 2, CIRCLE_QUALITY, WIRE_COLOR);
-                    batchLine(b, mv4[0], mv4[1], CLAMP(0, progress * 2, 1) * -PI / 2, PI/2-CLAMP(0, progress * 2, 1)*PI/2, 1, WIRE_COLOR);
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
+                    batchLine(b, mv4[0], mv4[1], -x, PI/2-x, 1, CLRL);
                     break;
                 case LEFT:
                     break;
             }
-            batchCircle(b, mv2[0], mv2[1], 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, mv2[0], mv2[1], 0.5, Q, CLRC);
+            batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
 
         case RIGHT:
-            batchLine(b, 0, 0, 0, progress * PI / 2, 1, WIRE_COLOR);
-            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchLine(b, 0, 0, 0, progress * PI/2, 1, CLRL);
+            batchCircle(b, 0,  1, 0.5, Q, CLRC);
+            batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
 
         case LEFT:
             switch (wire) {
                 case UP:
-                    batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, Q, CLRL);
                     break;
                 case DOWN:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, CIRCLE_QUALITY, WIRE_COLOR);
+                    batchRingSlice(b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, Q, CLRL);
                     break;
                 case RIGHT:
-                    batchLine(b, 0, 0, 0, PI / 2 - progress * PI / 2, 1, WIRE_COLOR);
+                    batchLine(b, 0, 0, 0, PI/2 - progress * PI/2, 1, CLRL);
                     break;
                 case LEFT:
                     break;
             }
-            batchCircle(b, 0,  1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
-            batchCircle(b, 0, -1, 0.5, CIRCLE_QUALITY, CIRCLE_COLOR);
+            batchCircle(b, 0,  1, 0.5, Q, CLRC);
+            batchCircle(b, 0, -1, 0.5, Q, CLRC);
             break;
     }
 }
