@@ -125,7 +125,6 @@ static void renewGlobalBatch(void) {
         if (wire == RIGHT) {
             matTrans(m0, -PI/2, 0);
         } else {
-            float m0[9], m1[9], m2[9];
             matTrans(m0, 1, wire == UP ? -1 : 1);
             matRot(m1, wire == UP ? PI/2*3 : PI/2);
             matMul(m2, m1, m0);
@@ -179,6 +178,7 @@ static void batchStaticActiveWire(Batch *b) {
 static void batchAnimated(Batch *b, float progress, float ar) {
     // TODO: refactor this steaming pile of shit
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
+
     batchAnimatedCircles(b, progress);
 
     float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
