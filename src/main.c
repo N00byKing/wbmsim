@@ -36,6 +36,7 @@ static void batchStatic(Batch *b, float ar);
 static void batchStaticActiveWire(Batch *b);
 static void batchAnimated(Batch *b, float progress, float ar);
 static void batchAnimatedCircles(Batch *b, float progress);
+static void batchAnimatedActiveWire(Batch *b, float progress);
 static void reactToInput(GLFWwindow *win);
 
 int main(void) {
@@ -180,7 +181,33 @@ static void batchAnimated(Batch *b, float progress, float ar) {
     batchLine(b, -ar / ZOOM, 0, 0, ar / ZOOM, 1, CLRL);
 
     batchAnimatedCircles(b, progress);
+    batchAnimatedActiveWire(b, progress);
+}
 
+static void batchAnimatedCircles(Batch *b, float progress) {
+    float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, mv1[3], mv2[3];
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
+    matMulVec(mv1, m, v1);
+    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI/2);
+    matMulVec(mv2, m, v2);
+    mv1[1] += 1;
+    mv2[1] -= 1;
+    if (s.action == UP) {
+        batchCircle(b, 0,  1, 0.5, Q, CLRC);
+        batchCircle(b, mv1[0], mv1[1], 0.5, Q, CLRC);
+    } else if (s.action == DOWN) {
+        batchCircle(b, mv2[0], mv2[1], 0.5, Q, CLRC);
+        batchCircle(b, 0, -1, 0.5, Q, CLRC);
+    } else if (s.action == RIGHT) {
+        batchCircle(b, 0,  1, 0.5, Q, CLRC);
+        batchCircle(b, 0, -1, 0.5, Q, CLRC);
+    } else {
+        batchCircle(b, 0,  1, 0.5, Q, CLRC);
+        batchCircle(b, 0, -1, 0.5, Q, CLRC);
+    }
+}
+
+static void batchAnimatedActiveWire(Batch *b, float progress) {
     float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, v3[3] = {0, -1, 1}, v4[3] = {0, 1, 1}, mv1[3], mv2[3], mv3[3], mv4[3];
     matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
     matMulVec(mv1, m, v1);
@@ -196,92 +223,36 @@ static void batchAnimated(Batch *b, float progress, float ar) {
 
     float x = CLAMP(0, progress * 2, 1) * PI/2;
 
-    switch (s.action) {
-
-        case UP:
-            switch (wire) {
-                case UP:
-                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, PI/2, Q, CLRL);
-                    break;
-                case DOWN:
-                    batchRingSlice(b, mv1[0], mv1[1], 1, 1, PI/2+x, -PI/2+x, Q, CLRL);
-                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
-                    break;
-                case RIGHT:
-                    batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
-                    batchLine(b, mv3[0], mv3[1], x, PI/2-x, 1, CLRL);
-                    break;
-                case LEFT:
-                    break;
-            }
-            break;
-
-        case DOWN:
-            switch (wire) {
-                case UP:
-                    batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-x, PI/2-x, Q, CLRL);
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
-                    break;
-                case DOWN:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, Q, CLRL);
-                    break;
-                case RIGHT:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
-                    batchLine(b, mv4[0], mv4[1], -x, PI/2-x, 1, CLRL);
-                    break;
-                case LEFT:
-                    break;
-            }
-            break;
-
-        case RIGHT:
-            batchLine(b, 0, 0, 0, progress * PI/2, 1, CLRL);
-            break;
-
-        case LEFT:
-            switch (wire) {
-                case UP:
-                    batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, Q, CLRL);
-                    break;
-                case DOWN:
-                    batchRingSlice(b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, Q, CLRL);
-                    break;
-                case RIGHT:
-                    batchLine(b, 0, 0, 0, PI/2 - progress * PI/2, 1, CLRL);
-                    break;
-                case LEFT:
-                    break;
-            }
-            break;
-    }
-}
-
-static void batchAnimatedCircles(Batch *b, float progress) {
-    float m[9], v1[3] = {0, -2, 1}, v2[3] = {0, 2, 1}, mv1[3], mv2[3];
-    matRot(m,  (1 - fabsf(progress * 2 - 1)) * PI/2);
-    matMulVec(mv1, m, v1);
-    matRot(m,  (1 - fabsf(progress * 2 - 1)) * -PI/2);
-    matMulVec(mv2, m, v2);
-    mv1[1] += 1;
-    mv2[1] -= 1;
-    int wire = s.wireLen > 0 ? s.wire[s.wireLen - 1] : LEFT;
-    switch (s.action) {
-        case UP:
-            batchCircle(b, 0,  1, 0.5, Q, CLRC);
-            batchCircle(b, mv1[0], mv1[1], 0.5, Q, CLRC);
-            break;
-        case DOWN:
-            batchCircle(b, mv2[0], mv2[1], 0.5, Q, CLRC);
-            batchCircle(b, 0, -1, 0.5, Q, CLRC);
-            break;
-        case RIGHT:
-            batchCircle(b, 0,  1, 0.5, Q, CLRC);
-            batchCircle(b, 0, -1, 0.5, Q, CLRC);
-            break;
-        case LEFT:
-            batchCircle(b, 0,  1, 0.5, Q, CLRC);
-            batchCircle(b, 0, -1, 0.5, Q, CLRC);
-            break;
+    if (s.action == UP) {
+        if (wire == UP) {
+            batchRingSlice(b, 0, 1, 1, 1, -PI/2, PI/2, Q, CLRL);
+        } else if (wire == DOWN) {
+            batchRingSlice(b, mv1[0], mv1[1], 1, 1, PI/2+x, -PI/2+x, Q, CLRL);
+            batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
+        } else if (wire == RIGHT) {
+            batchRingSlice(b, 0, 1, 1, 1, -PI/2, x, Q, CLRL);
+            batchLine(b, mv3[0], mv3[1], x, PI/2-x, 1, CLRL);
+        }
+    } else if (s.action == DOWN) {
+        if (wire == UP) {
+            batchRingSlice(b, mv2[0], mv2[1], 1, 1, -PI/2-x, PI/2-x, Q, CLRL);
+            batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
+        } else if (wire == DOWN) {
+            batchRingSlice(b, 0,-1, 1, 1, PI/2,-PI/2, Q, CLRL);
+        } else if (wire == RIGHT) {
+            batchRingSlice(b, 0,-1, 1, 1, PI/2, -x, Q, CLRL);
+            batchLine(b, mv4[0], mv4[1], -x, PI/2-x, 1, CLRL);
+        }
+    } else if (s.action == LEFT) {
+        if (wire == UP) {
+            batchRingSlice(b, 0, 1, 1, 1,-PI/2, (1-progress)*PI/2, Q, CLRL);
+        } else if (wire == DOWN) {
+            batchRingSlice(b, 0,-1, 1, 1, PI/2,(1-progress)*-PI/2, Q, CLRL);
+        } else if (wire == RIGHT) {
+            batchLine(b, 0, 0, 0, PI/2 - progress * PI/2, 1, CLRL);
+        }
+    } else {
+        batchLine(b, 0, 0, 0, progress * PI/2, 1, CLRL);
     }
 }
 
