@@ -184,35 +184,29 @@ void batchClearAny(Batch*b,size_t ni,size_t nv) {
 }
 
 void batchClearRect(Batch *b) {
-    b->ni -= 6;
-    b->nv -= 4;
+    batchClearAny(b, 6, 4);
 }
 
 void batchClearRectLine(Batch*b) {
-    b->ni -= 24;
-    b->nv -= 12;
+    batchClearAny(b, 24, 12);
 }
 
 void batchClearLine(Batch*b) {
-    batchClearRect(b);
+    batchClearAny(b, 6, 4);
 }
 
 void batchClearCircle(Batch*b,size_t n) {
-    b->ni -= n * 3;
-    b->nv -= n + 1;
+    batchClearAny(b, n * 3, n + 1);
 }
 
 void batchClearPieSlice(Batch*b,size_t n) {
-    b->ni -= (n - 1) * 3;
-    b->nv -= n + 1;
+    batchClearAny(b, n * 3 - 3, n + 1);
 }
 
 void batchClearRing(Batch*b,size_t n) {
-    b->ni -= n * 6;
-    b->nv -= n * 2;
+    batchClearAny(b, n * 6, n * 2);
 }
 
 void batchClearRingSlice(Batch*b,size_t n) {
-    b->ni -= (n - 1) * 6;
-    b->nv -= n * 2;
+    batchClearAny(b, n * 6 - 6, n * 2);
 }
