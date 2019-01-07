@@ -14,7 +14,7 @@
 #define MSAA 16
 #define CLRL (uint8_t[]){255,255,255}
 #define CLRC  (uint8_t[]){128,128,128}
-#define DT 2
+#define DT 0.5
 #define ZOOM 0.25
 #define Q 40
 #define PI 3.14159265358979
