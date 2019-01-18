@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,28 +11,6 @@
 static bool isValidWire(const char *w);
 static void lbatchLine(float x, float y, float a, float l, float t, uint32_t *ni, uint32_t *nv, uint32_t *i, float *v);
 static void lbatchRingSlice(float x, float y, float r, float t, float a, float o, uint32_t *ni, uint32_t *nv, uint32_t *i, float *v);
-
-//////////////////////////////////////////////////////////////////////////////
-#include "../lib/lib.h"
-#define GLFW_INCLUDE_ES2
-#include <GLFW/glfw3.h>
-static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
-    glfwWindowHint(GLFW_CLIENT_API, api);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, v / 10);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, v % 10);
-    glfwWindowHint(GLFW_SAMPLES, aa);
-    GLFWmonitor *mon = glfwGetPrimaryMonitor();
-    const GLFWvidmode *vm = glfwGetVideoMode(mon);
-    glfwWindowHint(GLFW_RED_BITS, vm->redBits);
-    glfwWindowHint(GLFW_GREEN_BITS, vm->greenBits);
-    glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
-    glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
-    glfwMakeContextCurrent(win);
-    glfwSwapInterval(vs);
-    return win;
-}
-//////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char **argv) {
     if (argc != 2 || strspn(argv[1], "RUD") != strlen(argv[1])) return 42;
@@ -121,24 +98,7 @@ static bool isValidWire(const char *w) {
         }
     }
 
-//////////////////////////////////////////////////////////////////////////////
-    glfwInit();
-    GLFWwindow *win = mkWin("t", GLFW_OPENGL_ES_API, 20, 1, 0);
-    rInit();
-    while (!glfwWindowShouldClose(win)) {
-        glfwPollEvents();
-        rClear(255,255,255);
-        int winW, winH;
-        glfwGetFramebufferSize(win, &winW, &winH);
-        rViewport(0, 0, winW, winH);
-        float ar = (float)winW/(float)winH;
-        rPipe(1.0/ar/4, 1.0/4, 0, 0);
-        rTris(ni, i, v);
-        glfwSwapBuffers(win);
-    }
-    rExit();
-    glfwTerminate();
-//////////////////////////////////////////////////////////////////////////////
+    // TODO: collision detection
 
     return true;
 }
@@ -196,4 +156,3 @@ static void lbatchRingSlice(float x, float y, float r, float t, float o, float a
     *ni += QQ * 4;
     *nv += QQ * 2;
 }
-
