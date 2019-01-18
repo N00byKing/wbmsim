@@ -8,7 +8,7 @@ typedef struct {
 void rInit(void);
 void rExit(void);
 void rPipe(float mulX, float mulY, float addX, float addY);
-void rTris(size_t ni, const uint32_t *i, const RVertex *v);
+void rTris(size_t ni, const uint32_t *i, const float *v);
 void rClear(uint8_t r, uint8_t g, uint8_t b);
 void rViewport(int x, int y, int w, int h);
 

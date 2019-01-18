@@ -48,16 +48,17 @@ void rPipe(float mulX, float mulY, float addX, float addY) {
     glUniform2f(r.uAdd, addX, addY);
 }
 
-void rTris(size_t ni, const uint32_t *i, const RVertex *v) {
+void rTris(size_t ni, const uint32_t *i, const float *v) {
     glEnableVertexAttribArray(r.aPos);
-    glEnableVertexAttribArray(r.aClr);
+//    glEnableVertexAttribArray(r.aClr);
 
-    glVertexAttribPointer(r.aPos, 2, GL_FLOAT, GL_FALSE, sizeof(*v), &v->x);
-    glVertexAttribPointer(r.aClr,3,GL_UNSIGNED_BYTE,GL_FALSE,sizeof(*v),&v->r);
+    glVertexAttribPointer(r.aPos, 2, GL_FLOAT, GL_FALSE, sizeof(float)*2, v);
+//    glVertexAttrib3f(r.aClr, 1, 1, 1);
+//    glVertexAttribPointer(r.aClr,3,GL_UNSIGNED_BYTE,GL_FALSE,sizeof(*v),&v->r);
 
-    glDrawElements(GL_TRIANGLES, ni, GL_UNSIGNED_INT, i);
+    glDrawElements(GL_LINES, ni, GL_UNSIGNED_INT, i);
 
-    glDisableVertexAttribArray(r.aClr);
+//    glDisableVertexAttribArray(r.aClr);
     glDisableVertexAttribArray(r.aPos);
 }
 
