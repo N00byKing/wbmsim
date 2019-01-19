@@ -13,15 +13,12 @@ DST=wbmsim
 $(DST): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ)
 
-cruncher: src/cruncher.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ src/cruncher.c
-
 $(OBJ): lib/lib.h
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJ) cruncher
+	rm -f $(OBJ)
 
 distclean:
-	rm -f $(OBJ) $(DST) cruncher
+	rm -f $(OBJ) $(DST)

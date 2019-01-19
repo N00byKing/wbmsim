@@ -9,6 +9,10 @@
 #define QC 40 // Quality of Circle
 #define SM 0.9 // Size Multiplier to avoid false-positive collisions
 
+static void findNew(size_t *length, size_t *nFound, size_t **found);
+static size_t exploreWire(size_t length, size_t wire, size_t *newlyFound);
+static size_t exploreWireChild(size_t length, const char *wire, size_t *newlyFound);
+static size_t w2n(size_t l, const char *w);
 static void n2w(size_t n, size_t l, char *w);
 static bool isValidWire(const char *w);
 static void lbatch(const char *w, size_t *i, double *v);
@@ -70,15 +74,92 @@ static void debug(size_t ni, const size_t *i, const double *v) {
 }
 //////////////////////////////////////////////////////////////////////////////
 
+#include <assert.h>
 int main(void) {
-    char w[255];
-    for (size_t l = 1; l <= 9; ++l) {
-        for (size_t n = 0; n < round(pow(3, l)); ++n) {
-            n2w(n, l, w);
-            printf("%s: %d\n", w, isValidWire(w));
+    size_t length = 1;
+    size_t nFound = 3;
+    size_t *found = malloc(3);
+    char wire[256];
+    found[0] = 0;
+    found[1] = 1;
+    found[2] = 2;
+    for (size_t i = 0; i < 1000; ++i) {
+        char w[256];
+        n2w(5, i, w);
+        size_t j = w2n(5, w);
+        assert(j == i);
+    }
+    while (length != 9) {
+        printf("%zu\n", nFound);
+        for (size_t i = 0; i < nFound; ++i) {
+            n2w(length, found[i], wire);
+//            puts(wire);
         }
+        findNew(&length, &nFound, &found);
+    }
+    free(found);
+}
+
+static void findNew(size_t *length, size_t *nFound, size_t **found) {
+    size_t l = *length + 1;
+    size_t n = round(pow(3, l));
+    size_t nNewlyFound = 0;
+    size_t *newlyFound = malloc(n * sizeof(*newlyFound));
+
+    for (size_t i = 0; i < *nFound; ++i) {
+        nNewlyFound += exploreWire(*length, (*found)[i], newlyFound + nNewlyFound);
+    }
+
+    ++*length;
+    *nFound = nNewlyFound;
+    free(*found);
+    *found = newlyFound;
+}
+
+static size_t exploreWire(size_t length, size_t wire, size_t *newlyFound) {
+    size_t n = 0;
+    char w[256];
+    n2w(wire, length, w);
+    w[length + 1] = 0;
+    w[length] = 'R';
+    n += exploreWireChild(length + 1, w, newlyFound + n);
+    w[length] = 'U';
+    n += exploreWireChild(length + 1, w, newlyFound + n);
+    w[length] = 'D';
+    n += exploreWireChild(length + 1, w, newlyFound + n);
+    return n;
+}
+
+static size_t exploreWireChild(size_t length, const char *wire, size_t *newlyFound) {
+    if (isValidWire(wire)) {
+        size_t index = w2n(length, wire);
+        *newlyFound = index;
+        return 1;
     }
     return 0;
+}
+
+static size_t w2n(size_t l, const char *w) {
+    size_t n = 0;
+    for (size_t i = 0; i < l; ++i) {
+        n *= 3;
+        n += w[i] == 'D' ? 2 : w[i] == 'U' ? 1 : 0;
+    }
+    return n;
+}
+
+static void n2w(size_t n, size_t l, char *w) {
+    w[l] = 0;
+    for (size_t i = 0; i < l; ++i) {
+        if (n % 3 == 0) {
+            w[i] = 'R';
+        } else if (n % 3 == 1) {
+            w[i] = 'U';
+        } else {
+            w[i] = 'D';
+        }
+        n /= 3;
+    }
 }
 
 static bool isValidWire(const char *w) {
@@ -120,20 +201,6 @@ static bool isValidWire(const char *w) {
     }
 
     return true;
-}
-
-static void n2w(size_t n, size_t l, char *w) {
-    w[l] = 0;
-    for (size_t i = 0; i < l; ++i) {
-        if (n % 3 == 0) {
-            w[i] = 'R';
-        } else if (n % 3 == 1) {
-            w[i] = 'U';
-        } else {
-            w[i] = 'D';
-        }
-        n /= 3;
-    }
 }
 
 static void lbatch(const char *w, size_t *i, double *v) {
