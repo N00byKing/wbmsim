@@ -9,6 +9,7 @@
 #define QC 40 // Quality of Circle
 #define SM 0.9 // Size Multiplier to avoid false-positive collisions
 
+static void n2w(size_t n, size_t l, char *w);
 static bool isValidWire(const char *w);
 static void lbatch(const char *w, size_t *i, double *v);
 static void lbatchLine(double x, double y, double a, double l, double t, size_t *ni, size_t *nv, size_t *i, double *v);
@@ -69,9 +70,15 @@ static void debug(size_t ni, const size_t *i, const double *v) {
 }
 //////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char **argv) {
-    if (argc != 2 || strspn(argv[1], "RUD") != strlen(argv[1])) return 42;
-    return !isValidWire(argv[argc - 1]);
+int main(void) {
+    char w[255];
+    for (size_t l = 1; l <= 9; ++l) {
+        for (size_t n = 0; n < round(pow(3, l)); ++n) {
+            n2w(n, l, w);
+            printf("%s: %d\n", w, isValidWire(w));
+        }
+    }
+    return 0;
 }
 
 static bool isValidWire(const char *w) {
@@ -94,7 +101,7 @@ static bool isValidWire(const char *w) {
     size_t ioffset = 0;
     for (size_t j = l - 1; j < l; --j) {
         size_t prevIoffset = ioffset;
-        ioffset += w[j] == 'R' ? 8 : 4;
+        ioffset += w[j] == 'R' ? 8 : QQ * 4;
         for (size_t g = ioffset; g < ni; g += 2) {
             for (size_t h = prevIoffset; h < ioffset; h += 2) {
                 double x0 = v[i[h + 0] * 2 + 0];
@@ -113,6 +120,20 @@ static bool isValidWire(const char *w) {
     }
 
     return true;
+}
+
+static void n2w(size_t n, size_t l, char *w) {
+    w[l] = 0;
+    for (size_t i = 0; i < l; ++i) {
+        if (n % 3 == 0) {
+            w[i] = 'R';
+        } else if (n % 3 == 1) {
+            w[i] = 'U';
+        } else {
+            w[i] = 'D';
+        }
+        n /= 3;
+    }
 }
 
 static void lbatch(const char *w, size_t *i, double *v) {
