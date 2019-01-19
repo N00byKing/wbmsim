@@ -83,17 +83,11 @@ int main(void) {
     found[0] = 0;
     found[1] = 1;
     found[2] = 2;
-    for (size_t i = 0; i < 1000; ++i) {
-        char w[256];
-        n2w(5, i, w);
-        size_t j = w2n(5, w);
-        assert(j == i);
-    }
+
     while (length != 9) {
         printf("%zu\n", nFound);
         for (size_t i = 0; i < nFound; ++i) {
-            n2w(length, found[i], wire);
-//            puts(wire);
+            n2w(found[i], length, wire);
         }
         findNew(&length, &nFound, &found);
     }
@@ -141,26 +135,38 @@ static size_t exploreWireChild(size_t length, const char *wire, size_t *newlyFou
 
 static size_t w2n(size_t l, const char *w) {
     size_t n = 0;
-    for (size_t i = 0; i < l; ++i) {
+    for (size_t i = l - 1; i < l; --i) {
         n *= 3;
-        n += w[i] == 'D' ? 2 : w[i] == 'U' ? 1 : 0;
+        n += (w[i] == 'D' ? 2 : w[i] == 'U' ? 1 : 0);
     }
     return n;
 }
 
+//static size_t w2n(const char *w, size_t L) {
+//    size_t n = 0;
+//    for (size_t j = L - 1; j < L; --j) {
+//        n += (w[j] == 'D') ? 2 : (w[j] == 'U') ? 1 : 0;
+//        if (j > 0) {
+//            n *= 3;
+//        }
+//    }
+//    return n;
+//}
+
 static void n2w(size_t n, size_t l, char *w) {
     w[l] = 0;
     for (size_t i = 0; i < l; ++i) {
-        if (n % 3 == 0) {
-            w[i] = 'R';
-        } else if (n % 3 == 1) {
-            w[i] = 'U';
-        } else {
-            w[i] = 'D';
-        }
+        w[i] = n % 3 == 2 ? 'D' : n % 3 == 1 ? 'U' : 'R';
         n /= 3;
     }
 }
+
+//static void n2w(size_t n, char *w, size_t L) {
+//    for (size_t j = 0; j < L; ++j) {
+//        w[j] = n % 3 == 2 ? 'D' : n % 3 == 1 ? 'U' : 'R';
+//        n /= 3;
+//    }
+//}
 
 static bool isValidWire(const char *w) {
     size_t l = strlen(w);
