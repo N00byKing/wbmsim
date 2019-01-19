@@ -15,6 +15,9 @@ static size_t exploreWireChild(size_t length, const char *wire, size_t *newlyFou
 static size_t w2n(size_t l, const char *w);
 static void n2w(size_t n, size_t l, char *w);
 static bool isValidWire(const char *w);
+static void printUnique(size_t length, size_t nFound, const size_t *found);
+static void rotate(size_t length, char *wire);
+static void reverse(size_t length, char *wire);
 static void lbatch(const char *w, size_t *i, double *v);
 static void lbatchLine(double x, double y, double a, double l, double t, size_t *ni, size_t *nv, size_t *i, double *v);
 static void lbatchRingSlice(double x, double y, double r, double t, double a, double o, size_t *ni, size_t *nv, size_t *i, double *v);
@@ -22,59 +25,6 @@ static void lbatchCircle(double x, double y, double r, size_t *ni, size_t *nv, s
 static bool segmentsCollide(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3);
 static void rayCollision(double ax, double ay, double aa, double bx, double by, double ba, double *al, double *bl);
 
-//////////////////////////////////////////////////////////////////////////////
-#include "../lib/lib.h"
-#include <GLFW/glfw3.h>
-static void debug(size_t ni, const size_t *i, const double *v) {
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_SAMPLES, 0);
-
-    GLFWmonitor *mon = glfwGetPrimaryMonitor();
-    const GLFWvidmode *vm = glfwGetVideoMode(mon);
-    glfwWindowHint(GLFW_RED_BITS, vm->redBits);
-    glfwWindowHint(GLFW_GREEN_BITS, vm->greenBits);
-    glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
-    glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
-
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, "title", mon, NULL);
-    glfwMakeContextCurrent(win);
-    glfwSwapInterval(1);
-
-    rInit();
-    Batch b = batchNew();
-    for (size_t j = 0; j < ni; j += 2) {
-        double x0 = v[i[j + 0] * 2 + 0];
-        double y0 = v[i[j + 0] * 2 + 1];
-        double x1 = v[i[j + 1] * 2 + 0];
-        double y1 = v[i[j + 1] * 2 + 1];
-        double a = atan2(y1 - y0, x1 - x0);
-        double l = sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
-        batchLine(&b, x0, y0, a, l, 0.02, (const uint8_t[]){255,255,255});
-    }
-
-    while (!glfwWindowShouldClose(win)) {
-        glfwPollEvents();
-        int winW, winH;
-        glfwGetFramebufferSize(win, &winW, &winH);
-        rViewport(0, 0, winW, winH);
-        float ar = (float)winW/(float)winH;
-        rPipe(1.0 / ar / 4.0, 1.0 / 4.0, 0, 0);
-        rClear(0,0,0);
-        rTris(b.ni, b.i, b.v);
-        glfwSwapBuffers(win);
-    }
-
-    batchDel(&b);
-    rExit();
-    glfwTerminate();
-}
-//////////////////////////////////////////////////////////////////////////////
-
-#include <assert.h>
 int main(void) {
     size_t length = 1;
     size_t nFound = 3;
@@ -85,10 +35,7 @@ int main(void) {
     found[2] = 2;
 
     while (length != 9) {
-        printf("%zu\n", nFound);
-        for (size_t i = 0; i < nFound; ++i) {
-            n2w(found[i], length, wire);
-        }
+        printUnique(length, nFound, found);
         findNew(&length, &nFound, &found);
     }
     free(found);
@@ -133,6 +80,50 @@ static size_t exploreWireChild(size_t length, const char *wire, size_t *newlyFou
     return 0;
 }
 
+static void printUnique(size_t length, size_t nFound, const size_t *found) {
+    size_t nUnique = 0;
+    size_t n = round(pow(3, length));
+    bool *seen = calloc(n, sizeof(*seen));
+    char wire[256];
+    for (size_t i = 0; i < nFound; ++i) {
+        size_t index = found[i];
+        n2w(index, length, wire);
+        if (seen[index]) {
+            continue;
+        }
+        seen[index] = true;
+
+        rotate(length, wire);
+        index = w2n(length, wire);
+        seen[index] = true;
+
+        reverse(length, wire);
+        index = w2n(length, wire);
+        seen[index] = true;
+
+        rotate(length, wire);
+        index = w2n(length, wire);
+        seen[index] = true;
+
+        ++nUnique;
+    }
+    printf("%zu\n", nUnique);
+}
+
+static void rotate(size_t length, char *wire) {
+    for (size_t i = 0; i < length; ++i) {
+        wire[i] = wire[i] == 'U' ? 'D' : wire[i] == 'D' ? 'U' : 'R';
+    }
+}
+
+static void reverse(size_t length, char *wire) {
+    for (size_t i = 0; i < length / 2; ++i) {
+        char tmp = wire[i];
+        wire[i] = wire[length - i - 1];
+        wire[length - i - 1] = tmp;
+    }
+}
+
 static size_t w2n(size_t l, const char *w) {
     size_t n = 0;
     for (size_t i = l - 1; i < l; --i) {
@@ -142,17 +133,6 @@ static size_t w2n(size_t l, const char *w) {
     return n;
 }
 
-//static size_t w2n(const char *w, size_t L) {
-//    size_t n = 0;
-//    for (size_t j = L - 1; j < L; --j) {
-//        n += (w[j] == 'D') ? 2 : (w[j] == 'U') ? 1 : 0;
-//        if (j > 0) {
-//            n *= 3;
-//        }
-//    }
-//    return n;
-//}
-
 static void n2w(size_t n, size_t l, char *w) {
     w[l] = 0;
     for (size_t i = 0; i < l; ++i) {
@@ -160,13 +140,6 @@ static void n2w(size_t n, size_t l, char *w) {
         n /= 3;
     }
 }
-
-//static void n2w(size_t n, char *w, size_t L) {
-//    for (size_t j = 0; j < L; ++j) {
-//        w[j] = n % 3 == 2 ? 'D' : n % 3 == 1 ? 'U' : 'R';
-//        n /= 3;
-//    }
-//}
 
 static bool isValidWire(const char *w) {
     size_t l = strlen(w);
@@ -182,8 +155,6 @@ static bool isValidWire(const char *w) {
     double *v = malloc(2 * nv * sizeof(*v));
 
     lbatch(w, i, v);
-
-//    debug(ni, i, v);
 
     size_t ioffset = 0;
     for (size_t j = l - 1; j < l; --j) {
