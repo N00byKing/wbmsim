@@ -10,6 +10,9 @@ extern struct S {
         double start;
         char action;
     } animation;
+    struct {
+        char active;
+    } wire;
 } s;
 
 bool isValidWire(const char *w);
