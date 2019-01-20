@@ -5,6 +5,11 @@
 
 extern struct S {
     Batch b;
+    struct {
+        int on;
+        double start;
+        char action;
+    } animation;
 } s;
 
 bool isValidWire(const char *w);
