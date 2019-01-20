@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
-#include <math.h>
+#include <tgmath.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -118,8 +118,16 @@ static void drawBalls(void) {
             drawBall(cx, cy, dt2 * -PI);
             drawBall(CX, CY - WT, 0);
         } else if (s.animation.action == 'L') {
-            drawBall(CX, CY + WT, dt * -PI);
-            drawBall(CX, CY - WT, dt *  PI);
+            if (s.wire.active == 'L' || s.wire.active == 'R') {
+                drawBall(CX, CY + WT, dt * -PI);
+                drawBall(CX, CY - WT, dt *  PI);
+            } else if (s.wire.active == 'U') {
+                drawBall(CX, CY + WT, dt * -PI / 2);
+                drawBall(CX, CY - WT, dt *  PI);
+            } else if (s.wire.active == 'D') {
+                drawBall(CX, CY + WT, dt * -PI);
+                drawBall(CX, CY - WT, dt *  PI / 2);
+            }
         } else {
             drawBall(CX, CY + WT, dt *  PI);
             drawBall(CX, CY - WT, dt * -PI);
@@ -139,7 +147,52 @@ static void drawBall(float cx, float cy, float a) {
 }
 
 static void drawActiveWire(void) {
-    // TODO 1
+    if (!s.animation.on) {
+        if (s.wire.active == 'R') {
+            batchRect(&s.b, (const float[]){CX, CY - WT / 2, PI / 2, WT}, WC);
+        } else if (s.wire.active == 'U') {
+            batchRingSlice(&s.b, CX, CY + WT, WT, WT, -PI/2,  PI/2, QQ, WC);
+        } else if (s.wire.active == 'D') {
+            batchRingSlice(&s.b, CX, CY - WT, WT, WT,  PI/2, -PI/2, QQ, WC);
+        }
+    } else {
+        float dt = s.animation.on ? CLAMP(0, (glfwGetTime() - s.animation.start) / DT, 1) : 0;
+        float dt2 = MIN(dt * 2, 1);
+        float dt3 = dt2 * PI / 2;
+        if (s.animation.action == 'L') {
+            if (s.wire.active == 'R') {
+                batchRect(&s.b, (const float[]){CX, CY - WT / 2, (1 - dt) * PI / 2, WT}, WC);
+            } else if (s.wire.active == 'U') {
+                batchRingSlice(&s.b, CX, CY + WT, WT, WT, -PI / 2, (1 - dt) *  PI / 2, QQ, WC);
+            } else if (s.wire.active == 'D') {
+                batchRingSlice(&s.b, CX, CY - WT, WT, WT,  PI / 2, (1 - dt) * -PI / 2, QQ, WC);
+            }
+        } else if (s.animation.action == 'U') {
+            float a = -PI / 2 + dt3;
+            if (s.wire.active == 'R') {
+                batchRingSlice(&s.b, CX, CY + WT, WT, WT, -PI / 2, dt3, QQ, WC);
+                batchLine(&s.b, CX + cos(a), CY + sin(a) + WT, dt3, PI / 2 - dt3, WT, WC);
+            } else if (s.wire.active == 'U') {
+                batchRingSlice(&s.b, CX, CY + WT, WT, WT, -PI/2,  PI/2, QQ, WC);
+            } else if (s.wire.active == 'D') {
+                batchRingSlice(&s.b, CX + cos(a) * 2, CY + sin(a) * 2 + WT, WT, WT, PI / 2 + dt3, -PI / 2 + dt3, QQ, WC);
+                batchRingSlice(&s.b, CX, CY + WT, WT, WT, -PI / 2, dt3, QQ, WC);
+            }
+        } else if (s.animation.action == 'D') {
+            float a = PI / 2 - dt3;
+            if (s.wire.active == 'R') {
+                batchRingSlice(&s.b, CX, CY - WT, WT, WT, PI / 2, -dt3, QQ, WC);
+                batchLine(&s.b, CX + cos(a), CY + sin(a) - WT, -dt3, PI / 2 - dt3, WT, WC);
+            } else if (s.wire.active == 'U') {
+                batchRingSlice(&s.b, CX + cos(a) * 2, CY + sin(a) * 2 - WT, WT, WT, -PI / 2 - dt3, PI / 2 - dt3, QQ, WC);
+                batchRingSlice(&s.b, CX, CY - WT, WT, WT, PI / 2, -dt3, QQ, WC);
+            } else if (s.wire.active == 'D') {
+                batchRingSlice(&s.b, CX, CY - WT, WT, WT,  PI/2, -PI/2, QQ, WC);
+            }
+        } else {
+            batchRect(&s.b, (const float[]){CX, CY - WT / 2, dt * PI / 2, WT}, WC);
+        }
+    }
 }
 
 static void drawPassiveWire(void) {
