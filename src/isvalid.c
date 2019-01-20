@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "../lib/lib.h"
 #include "main.h"
 
 #define SM 0.9 // Size Multiplier
+#define WL 99 // static Wire Length
 
 static void lbatch(const char *w, size_t *i, double *v);
 static void lbatchLine(double x, double y, double a, double l, double t, size_t *ni, size_t *nv, size_t *i, double *v);
@@ -125,7 +127,7 @@ static void lbatch(const char *w, size_t *i, double *v) {
         }
     }
 
-    lbatchLine(-99, 0, 0, 99 - 1 + SM, SM, &ni, &nv, i, v);
+    lbatchLine(-WL, 0, 0, WL - 1 + SM, SM, &ni, &nv, i, v);
     lbatchCircle(0,  1, 0.5 * SM, &ni, &nv, i, v);
     lbatchCircle(0, -1, 0.5 * SM, &ni, &nv, i, v);
 }
