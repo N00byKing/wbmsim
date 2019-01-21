@@ -11,7 +11,8 @@ extern struct S {
         char action;
     } animation;
     struct {
-        char active;
+        size_t n, m;
+        char active, *passive;
     } wire;
 } s;
 

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <tgmath.h>
 
 #define GLFW_INCLUDE_NONE
@@ -66,6 +67,7 @@ int main(void) {
         startAnimation(win);
     }
 
+    free(s.wire.passive);
     batchDel(&s.b);
     rExit();
     glfwTerminate();
@@ -196,7 +198,7 @@ static void drawActiveWire(void) {
 }
 
 static void drawPassiveWire(void) {
-    // TODO 2
+    // TODO 1
 }
 
 static void stopAnimation(void) {
@@ -205,8 +207,8 @@ static void stopAnimation(void) {
     }
     s.animation.on = 0;
     if (s.animation.action == 'L') {
-        // TODO 3
-        s.wire.active = 'L';
+        s.wire.active = s.wire.n > 0 ? s.wire.passive[--s.wire.n] : 'L';
+        s.wire.passive[s.wire.n] = 0;
     } else if (s.animation.action == 'R') {
         s.wire.active = 'R';
     } else if (s.animation.action == 'U' && s.wire.active != 'L') {
@@ -235,6 +237,12 @@ static void startAnimation(GLFWwindow *win) {
         }
         s.animation.action = 'L';
     } else if (right) {
+        if (s.wire.n <= s.wire.m) {
+            s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
+            s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
+        }
+        s.wire.passive[s.wire.n++] = s.wire.active;
+        s.wire.passive[s.wire.n] = 0;
         s.animation.action = 'R';
         s.wire.active = 'L';
     } else if (up) {
@@ -242,5 +250,4 @@ static void startAnimation(GLFWwindow *win) {
     } else if (down) {
         s.animation.action = 'D';
     }
-    // TODO 4
 }
