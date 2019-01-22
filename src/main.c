@@ -26,7 +26,7 @@
 #define WC (const uint8_t[]){255, 255, 255} // Wire Color
 #define CC (const uint8_t[]){128, 128, 128} // Circle Color
 #define CCC (const uint8_t[]){64, 64, 64} // Circle Contour Color
-#define DT 2.0 // Animation duration
+#define DT 1.0 // Animation duration
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -202,50 +202,79 @@ static void drawPassiveWire(void) {
         char dir = s.wire.active;
         double x, y;
         if (s.wire.active == 'U') {
-            x = y = 1;
+            x = y = WT;
         } else if (s.wire.active == 'D') {
-            x = y = -1;
+            x = WT;
+            y = -WT;
         } else {
-            x = PI / 2;
+            x = PI / 2 * WT;
             y = 0;
         }
         for (size_t i = s.wire.n - 1; i < s.wire.n; --i) {
             if (dir == 'U') {
                 if (s.wire.passive[i] == 'U') {
-                    // TODO 1
+                    batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, PI / 2, QQ, WC);
+                    x -= WT;
+                    y += WT;
+                    dir = 'L';
                 } else if (s.wire.passive[i] == 'D') {
-                    // TODO 2
+                    batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, -PI / 2, QQ, WC);
+                    x += WT;
+                    y += WT;
+                    dir = 'R';
                 } else {
-                    // TODO 3
+                    batchLine(&s.b, CX + x, CY + y, PI / 2, PI / 2 * WT, WT, WC);
+                    y += PI / 2 * WT;
                 }
             } else if (dir == 'D') {
                 if (s.wire.passive[i] == 'U') {
-                    // TODO 4
+                    batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, PI / 2, QQ, WC);
+                    x += WT;
+                    y -= WT;
+                    dir = 'R';
                 } else if (s.wire.passive[i] == 'D') {
-                    // TODO 5
+                    batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, -PI / 2, QQ, WC);
+                    x -= WT;
+                    y -= WT;
+                    dir = 'L';
                 } else {
-                    // TODO 6
+                    batchLine(&s.b, CX + x, CY + y, -PI / 2, PI / 2 * WT, WT, WC);
+                    y -= PI / 2 * WT;
                 }
             } else if (dir == 'L') {
                 if (s.wire.passive[i] == 'U') {
-                    // TODO 7
+                    batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, PI / 2, QQ, WC);
+                    x -= WT;
+                    y -= WT;
+                    dir = 'D';
                 } else if (s.wire.passive[i] == 'D') {
-                    // TODO 8
+                    batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, -PI / 2, QQ, WC);
+                    x -= WT;
+                    y += WT;
+                    dir = 'U';
                 } else {
-                    // TODO 9
+                    batchLine(&s.b, CX + x, CY + y, 0, -PI / 2 * WT, WT, WC);
+                    x -= PI / 2 * WT;
                 }
             } else {
                 if (s.wire.passive[i] == 'U') {
-                    // TODO 10
+                    batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, PI / 2, QQ, WC);
+                    x += WT;
+                    y += WT;
+                    dir = 'U';
                 } else if (s.wire.passive[i] == 'D') {
-                    // TODO 11
+                    batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, -PI / 2, QQ, WC);
+                    x += WT;
+                    y -= WT;
+                    dir = 'D';
                 } else {
-                    // TODO 12
+                    batchLine(&s.b, CX + x, CY + y, 0, PI / 2 * WT, WT, WC);
+                    x += PI / 2 * WT;
                 }
             }
         }
     }
-    // TODO 13
+    // TODO 1
 }
 
 static void stopAnimation(void) {
@@ -255,7 +284,9 @@ static void stopAnimation(void) {
     s.animation.on = 0;
     if (s.animation.action == 'L') {
         s.wire.active = s.wire.n > 0 ? s.wire.passive[--s.wire.n] : 'L';
-        s.wire.passive[s.wire.n] = 0;
+        if (s.wire.m) {
+            s.wire.passive[s.wire.n] = 0;
+        }
     } else if (s.animation.action == 'R') {
         s.wire.active = 'R';
     } else if (s.animation.action == 'U' && s.wire.active != 'L') {
@@ -284,12 +315,14 @@ static void startAnimation(GLFWwindow *win) {
         }
         s.animation.action = 'L';
     } else if (right) {
-        if (s.wire.n <= s.wire.m) {
-            s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
-            s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
+        if (s.wire.active != 'L') {
+            if (s.wire.n <= s.wire.m) {
+                s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
+                s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
+            }
+            s.wire.passive[s.wire.n++] = s.wire.active;
+            s.wire.passive[s.wire.n] = 0;
         }
-        s.wire.passive[s.wire.n++] = s.wire.active;
-        s.wire.passive[s.wire.n] = 0;
         s.animation.action = 'R';
         s.wire.active = 'L';
     } else if (up) {
