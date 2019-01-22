@@ -40,6 +40,7 @@ static void drawBalls(void);
 static void drawBall(float cx, float cy, float a);
 static void drawActiveWire(void);
 static void drawPassiveWire(void);
+static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
 
@@ -199,82 +200,114 @@ static void drawActiveWire(void) {
 
 static void drawPassiveWire(void) {
     if (!s.animation.on) {
-        char dir = s.wire.active;
-        double x, y;
-        if (s.wire.active == 'U') {
-            x = y = WT;
-        } else if (s.wire.active == 'D') {
-            x = WT;
-            y = -WT;
+        drawPassiveStaticWire(NULL);
+    } else {
+        if (s.animation.action == 'U') {
+            if (s.wire.active == 'U') {
+                drawPassiveStaticWire(NULL);
+            } else if (s.wire.active == 'D') {
+                // TODO 1
+            } else if (s.wire.active == 'R') {
+                // TODO 2
+            }
+        } else if (s.animation.action == 'D') {
+            if (s.wire.active == 'U') {
+                // TODO 3
+            } else if (s.wire.active == 'D') {
+                drawPassiveStaticWire(NULL);
+            } else if (s.wire.active == 'R') {
+                // TODO 4
+            }
+        } else if (s.animation.action == 'L') {
+            if (s.wire.active == 'U') {
+                // TODO 5
+            } else if (s.wire.active == 'D') {
+                // TODO 6
+            } else if (s.wire.active == 'R') {
+                // TODO 7
+            }
         } else {
-            x = PI / 2 * WT;
-            y = 0;
+            // TODO 8
         }
-        for (size_t i = s.wire.n - 1; i < s.wire.n; --i) {
-            if (dir == 'U') {
-                if (s.wire.passive[i] == 'U') {
-                    batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, PI / 2, QQ, WC);
-                    x -= WT;
-                    y += WT;
-                    dir = 'L';
-                } else if (s.wire.passive[i] == 'D') {
-                    batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, -PI / 2, QQ, WC);
-                    x += WT;
-                    y += WT;
-                    dir = 'R';
-                } else {
-                    batchLine(&s.b, CX + x, CY + y, PI / 2, PI / 2 * WT, WT, WC);
-                    y += PI / 2 * WT;
-                }
-            } else if (dir == 'D') {
-                if (s.wire.passive[i] == 'U') {
-                    batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, PI / 2, QQ, WC);
-                    x += WT;
-                    y -= WT;
-                    dir = 'R';
-                } else if (s.wire.passive[i] == 'D') {
-                    batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, -PI / 2, QQ, WC);
-                    x -= WT;
-                    y -= WT;
-                    dir = 'L';
-                } else {
-                    batchLine(&s.b, CX + x, CY + y, -PI / 2, PI / 2 * WT, WT, WC);
-                    y -= PI / 2 * WT;
-                }
-            } else if (dir == 'L') {
-                if (s.wire.passive[i] == 'U') {
-                    batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, PI / 2, QQ, WC);
-                    x -= WT;
-                    y -= WT;
-                    dir = 'D';
-                } else if (s.wire.passive[i] == 'D') {
-                    batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, -PI / 2, QQ, WC);
-                    x -= WT;
-                    y += WT;
-                    dir = 'U';
-                } else {
-                    batchLine(&s.b, CX + x, CY + y, 0, -PI / 2 * WT, WT, WC);
-                    x -= PI / 2 * WT;
-                }
+    }
+}
+
+static void drawPassiveStaticWire(const float *matrix) {
+    char dir = s.wire.active;
+    double x, y;
+    if (s.wire.active == 'U') {
+        x = y = WT;
+    } else if (s.wire.active == 'D') {
+        x = WT;
+        y = -WT;
+    } else {
+        x = PI / 2 * WT;
+        y = 0;
+    }
+    for (size_t i = s.wire.n - 1; i < s.wire.n; --i) {
+        if (dir == 'U') {
+            if (s.wire.passive[i] == 'U') {
+                batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, PI / 2, QQ, WC);
+                x -= WT;
+                y += WT;
+                dir = 'L';
+            } else if (s.wire.passive[i] == 'D') {
+                batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, -PI / 2, QQ, WC);
+                x += WT;
+                y += WT;
+                dir = 'R';
             } else {
-                if (s.wire.passive[i] == 'U') {
-                    batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, PI / 2, QQ, WC);
-                    x += WT;
-                    y += WT;
-                    dir = 'U';
-                } else if (s.wire.passive[i] == 'D') {
-                    batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, -PI / 2, QQ, WC);
-                    x += WT;
-                    y -= WT;
-                    dir = 'D';
-                } else {
-                    batchLine(&s.b, CX + x, CY + y, 0, PI / 2 * WT, WT, WC);
-                    x += PI / 2 * WT;
-                }
+                batchLine(&s.b, CX + x, CY + y, PI / 2, PI / 2 * WT, WT, WC);
+                y += PI / 2 * WT;
+            }
+        } else if (dir == 'D') {
+            if (s.wire.passive[i] == 'U') {
+                batchRingSlice(&s.b, CX + x + WT, CY + y, WT, WT, PI, PI / 2, QQ, WC);
+                x += WT;
+                y -= WT;
+                dir = 'R';
+            } else if (s.wire.passive[i] == 'D') {
+                batchRingSlice(&s.b, CX + x - WT, CY + y, WT, WT, 0, -PI / 2, QQ, WC);
+                x -= WT;
+                y -= WT;
+                dir = 'L';
+            } else {
+                batchLine(&s.b, CX + x, CY + y, -PI / 2, PI / 2 * WT, WT, WC);
+                y -= PI / 2 * WT;
+            }
+        } else if (dir == 'L') {
+            if (s.wire.passive[i] == 'U') {
+                batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, PI / 2, QQ, WC);
+                x -= WT;
+                y -= WT;
+                dir = 'D';
+            } else if (s.wire.passive[i] == 'D') {
+                batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, -PI / 2, QQ, WC);
+                x -= WT;
+                y += WT;
+                dir = 'U';
+            } else {
+                batchLine(&s.b, CX + x, CY + y, 0, -PI / 2 * WT, WT, WC);
+                x -= PI / 2 * WT;
+            }
+        } else {
+            if (s.wire.passive[i] == 'U') {
+                batchRingSlice(&s.b, CX + x, CY + y + WT, WT, WT, -PI / 2, PI / 2, QQ, WC);
+                x += WT;
+                y += WT;
+                dir = 'U';
+            } else if (s.wire.passive[i] == 'D') {
+                batchRingSlice(&s.b, CX + x, CY + y - WT, WT, WT, PI / 2, -PI / 2, QQ, WC);
+                x += WT;
+                y -= WT;
+                dir = 'D';
+            } else {
+                batchLine(&s.b, CX + x, CY + y, 0, PI / 2 * WT, WT, WC);
+                x += PI / 2 * WT;
             }
         }
     }
-    // TODO 1
+    // TODO 9
 }
 
 static void stopAnimation(void) {
