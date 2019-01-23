@@ -43,6 +43,7 @@ static void drawPassiveWire(void);
 static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
+static bool wireWillBeValid(char action);
 
 int main(void) {
     glfwInit();
@@ -399,13 +400,15 @@ static void startAnimation(GLFWwindow *win) {
     s.animation.start = glfwGetTime();
 
     if (left) {
-        if (s.wire.active == 'L') {
-            s.animation.on = 0;
-        }
+        s.animation.on = (s.wire.active != 'L');
         s.animation.action = 'L';
     } else if (right) {
+        if (!wireWillBeValid('R')) {
+            s.animation.on = 0;
+            return;
+        }
         if (s.wire.active != 'L') {
-            if (s.wire.n <= s.wire.m) {
+            if (s.wire.n >= s.wire.m) {
                 s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
                 s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
             }
@@ -415,8 +418,44 @@ static void startAnimation(GLFWwindow *win) {
         s.animation.action = 'R';
         s.wire.active = 'L';
     } else if (up) {
-        s.animation.action = 'U';
+        if (wireWillBeValid('U')) {
+            s.animation.action = 'U';
+        } else {
+            s.animation.on = 0;
+        }
     } else if (down) {
-        s.animation.action = 'D';
+        if (wireWillBeValid('D')) {
+            s.animation.action = 'D';
+        } else {
+            s.animation.on = 0;
+        }
     }
+}
+
+static bool wireWillBeValid(char action) {
+    // FIXME: this is WAYYYYYY to slow; Speed it up!!!!
+    bool valid;
+
+    if (s.wire.n + 4 >= s.wire.m) {
+        s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
+        s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
+    }
+
+    if (action == 'U' || action == 'D') {
+        s.wire.passive[s.wire.n] = action;
+        s.wire.passive[s.wire.n + 1] = 0;
+    } else {
+        if (s.wire.active != 'L') {
+            s.wire.passive[s.wire.n] = s.wire.active;
+            s.wire.passive[s.wire.n + 1] = action;
+            s.wire.passive[s.wire.n + 2] = 0;
+        } else {
+            s.wire.passive[s.wire.n] = action;
+            s.wire.passive[s.wire.n + 1] = 0;
+        }
+    }
+    valid = isValidWire(s.wire.passive);
+    s.wire.passive[s.wire.n] = 0;
+
+    return valid;
 }
