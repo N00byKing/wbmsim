@@ -202,37 +202,81 @@ static void drawPassiveWire(void) {
     if (!s.animation.on) {
         drawPassiveStaticWire(NULL);
     } else {
+        float m0[9], m1[9], m2[9];
+        float dt = CLAMP(0, (glfwGetTime() - s.animation.start) / DT, 1);
+        float dt2 = MIN(dt * 2, 1);
         if (s.animation.action == 'U') {
             if (s.wire.active == 'U') {
                 drawPassiveStaticWire(NULL);
             } else if (s.wire.active == 'D') {
-                // TODO 1
+                matTrans(m0, -WT - CX, WT - CY);
+                matRot(m1, PI * dt2);
+                matMul(m2, m1, m0);
+                float dx = cos(PI * dt2) * WT + cos(-PI / 2 + PI / 2 * dt2) * WT * 2;
+                float dy = sin(PI * dt2) * WT + sin(-PI / 2 + PI / 2 * dt2) * WT * 2 + WT;
+                matTrans(m1, CX + dx, CY + dy);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             } else if (s.wire.active == 'R') {
-                // TODO 2
+                matTrans(m0, -PI / 2 * WT - CX, -CY);
+                matRot(m1, PI / 2 * dt2);
+                matMul(m2, m1, m0);
+                float dx = cos(PI / 2 * dt2) * PI / 2 * (1 - dt2) * WT + cos(-PI / 2 + PI / 2 * dt2) * WT;
+                float dy = sin(PI / 2 * dt2) * PI / 2 * (1 - dt2) * WT + sin(-PI / 2 + PI / 2 * dt2) * WT + WT;
+                matTrans(m1, CX + dx, CY + dy);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             }
         } else if (s.animation.action == 'D') {
             if (s.wire.active == 'U') {
-                // TODO 3
+                matTrans(m0, -WT - CX, -WT - CY);
+                matRot(m1, -PI * dt2);
+                matMul(m2, m1, m0);
+                float dx = cos(-PI * dt2) * WT + cos(PI / 2 + -PI / 2 * dt2) * WT * 2;
+                float dy = sin(-PI * dt2) * WT + sin(PI / 2 + -PI / 2 * dt2) * WT * 2 - WT;
+                matTrans(m1, CX + dx, CY + dy);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             } else if (s.wire.active == 'D') {
                 drawPassiveStaticWire(NULL);
             } else if (s.wire.active == 'R') {
-                // TODO 4
+                matTrans(m0, -PI / 2 * WT - CX, -CY);
+                matRot(m1, -PI / 2 * dt2);
+                matMul(m2, m1, m0);
+                float dx = cos(-PI / 2 * dt2) * PI / 2 * (1 - dt2) * WT + cos(PI / 2 + -PI / 2 * dt2) * WT;
+                float dy = sin(-PI / 2 * dt2) * PI / 2 * (1 - dt2) * WT + sin(PI / 2 + -PI / 2 * dt2) * WT - WT;
+                matTrans(m1, CX + dx, CY + dy);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             }
         } else if (s.animation.action == 'L') {
             if (s.wire.active == 'U') {
-                // TODO 5
+                matTrans(m0, -WT - CX, -WT - CY);
+                matRot(m1, -PI / 2 * dt);
+                matMul(m2, m1, m0);
+                matTrans(m1, CX + cos(-PI / 2 * dt) * WT, CY + sin(-PI / 2 * dt) * WT + WT);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             } else if (s.wire.active == 'D') {
-                // TODO 6
+                matTrans(m0, -WT - CX, WT - CY);
+                matRot(m1, PI / 2 * dt);
+                matMul(m2, m1, m0);
+                matTrans(m1, CX + cos(PI / 2 * dt) * WT, CY + sin(PI / 2 * dt) * WT - WT);
+                matMul(m0, m1, m2);
+                drawPassiveStaticWire(m0);
             } else if (s.wire.active == 'R') {
-                // TODO 7
+                matTrans(m0, -PI / 2 * WT * dt, 0);
+                drawPassiveStaticWire(m0);
             }
         } else {
-            // TODO 8
+            matTrans(m0, PI / 2 * WT * dt, 0);
+            drawPassiveStaticWire(m0);
         }
     }
 }
 
 static void drawPassiveStaticWire(const float *matrix) {
+    size_t oldnv = s.b.nv;
     char dir = s.wire.active;
     double x, y;
     if (s.wire.active == 'U') {
@@ -240,6 +284,9 @@ static void drawPassiveStaticWire(const float *matrix) {
     } else if (s.wire.active == 'D') {
         x = WT;
         y = -WT;
+    } else if (s.wire.active == 'L') {
+        x = y = 0;
+        dir = 'R';
     } else {
         x = PI / 2 * WT;
         y = 0;
@@ -307,7 +354,16 @@ static void drawPassiveStaticWire(const float *matrix) {
             }
         }
     }
-    // TODO 9
+
+    if (matrix) {
+        for (size_t i = oldnv; i < s.b.nv; ++i) {
+            float mv[3];
+            float v[3] = {s.b.v[i].x, s.b.v[i].y, 1};
+            matMulVec(mv, matrix, v);
+            s.b.v[i].x = mv[0];
+            s.b.v[i].y = mv[1];
+        }
+    }
 }
 
 static void stopAnimation(void) {
