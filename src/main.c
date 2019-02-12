@@ -433,9 +433,6 @@ static void startAnimation(GLFWwindow *win) {
 }
 
 static bool wireWillBeValid(char action) {
-    // FIXME: this is WAYYYYYY to slow; Speed it up!!!!
-    bool valid;
-
     if (s.wire.n + 4 >= s.wire.m) {
         s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
         s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
@@ -454,7 +451,7 @@ static bool wireWillBeValid(char action) {
             s.wire.passive[s.wire.n + 1] = 0;
         }
     }
-    valid = isValidWire(s.wire.passive);
+    bool valid = isValidWire(s.wire.passive);
     s.wire.passive[s.wire.n] = 0;
 
     return valid;

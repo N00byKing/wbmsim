@@ -210,6 +210,7 @@ static bool detectCurveCollision(Curve a, Curve b) {
 static bool collLineLine(Line a, Line b) {
     double l1, l2;
     if (IS0(a.a - b.a)) {
+        // FIXME: won't detect when aStart reaches bEnd or bStart reaches aEnd
         double l = len(a.x, a.y, b.x, b.y);
         if (l > a.l && l > b.l) {
             return false;
