@@ -5,7 +5,7 @@
 
 #define PI 3.1415926535
 #define SM 0.99
-#define ZERO_TOLERANCE 0.0009765625
+#define IS0(x) (fabs(x)<0.0009765625)
 
 typedef enum {
     CURVE_TYPE_LINE,
@@ -29,7 +29,7 @@ typedef struct {
     union {
         Line line;
         Arc arc;
-    } curve;
+    } c;
 } Curve;
 
 bool isValidWire(const char *w);
@@ -141,17 +141,17 @@ static void buildLine(Curve *c, Line line, double t) {
     double y2 = line.y + sin(line.a + PI / 2) * t / 2;
     double x3 = x1 + cos(line.a) * line.l;
     double y3 = y1 + sin(line.a) * line.l;
-    c[0] = (Curve){CURVE_TYPE_LINE, .curve.line = {x1, y1, line.a, line.l}};
-    c[1] = (Curve){CURVE_TYPE_LINE, .curve.line = {x2, y2, line.a, line.l}};
-    c[2] = (Curve){CURVE_TYPE_LINE, .curve.line = {x1, y1, line.a + PI / 2, t}};
-    c[3] = (Curve){CURVE_TYPE_LINE, .curve.line = {x3, y3, line.a + PI / 2, t}};
+    c[0] = (Curve){CURVE_TYPE_LINE, .c.line = {x1, y1, line.a, line.l}};
+    c[1] = (Curve){CURVE_TYPE_LINE, .c.line = {x2, y2, line.a, line.l}};
+    c[2] = (Curve){CURVE_TYPE_LINE, .c.line = {x1, y1, line.a + PI / 2, t}};
+    c[3] = (Curve){CURVE_TYPE_LINE, .c.line = {x3, y3, line.a + PI / 2, t}};
 }
 
 static void buildArc(Curve *c, Arc arc, double t) {
-    c[0] = (Curve){CURVE_TYPE_LINE, .curve.line = {arc.x + cos(arc.o) * (arc.r - t / 2), arc.y + sin(arc.o) * (arc.r - t / 2), arc.o, t}};
-    c[1] = (Curve){CURVE_TYPE_LINE, .curve.line = {arc.x + cos(arc.o + arc.a) * (arc.r - t / 2), arc.y + sin(arc.o + arc.a) * (arc.r - t / 2), arc.o + arc.a, t}};
-    c[2] = (Curve){CURVE_TYPE_ARC, .curve.arc = {arc.x, arc.y, arc.r - t / 2, arc.o, arc.a}};
-    c[3] = (Curve){CURVE_TYPE_ARC, .curve.arc = {arc.x, arc.y, arc.r + t / 2, arc.o, arc.a}};
+    c[0] = (Curve){CURVE_TYPE_LINE, .c.line = {arc.x + cos(arc.o) * (arc.r - t / 2), arc.y + sin(arc.o) * (arc.r - t / 2), arc.o, t}};
+    c[1] = (Curve){CURVE_TYPE_LINE, .c.line = {arc.x + cos(arc.o + arc.a) * (arc.r - t / 2), arc.y + sin(arc.o + arc.a) * (arc.r - t / 2), arc.o + arc.a, t}};
+    c[2] = (Curve){CURVE_TYPE_ARC, .c.arc = {arc.x, arc.y, arc.r - t / 2, arc.o, arc.a}};
+    c[3] = (Curve){CURVE_TYPE_ARC, .c.arc = {arc.x, arc.y, arc.r + t / 2, arc.o, arc.a}};
 }
 
 static bool detectCollision(size_t l, const Curve *c) {
@@ -168,12 +168,12 @@ static bool detectCollision(size_t l, const Curve *c) {
     }
 
     Curve x[6];
-    x[0] = (Curve){CURVE_TYPE_ARC, .curve.arc = {0,  1, SM / 2, 0, PI * 2 * SM}};
-    x[1] = (Curve){CURVE_TYPE_ARC, .curve.arc = {0, -1, SM / 2, 0, PI * 2 * SM}};
-    x[2] = (Curve){CURVE_TYPE_LINE, .curve.line = {-99, -SM / 2, 0, 98 + SM}};
-    x[3] = (Curve){CURVE_TYPE_LINE, .curve.line = {-99,  SM / 2, 0, 98 + SM}};
-    x[4] = (Curve){CURVE_TYPE_LINE, .curve.line = {-99, -SM / 2, PI / 2, SM}};
-    x[5] = (Curve){CURVE_TYPE_LINE, .curve.line = {SM - 1, -SM / 2, PI / 2, SM}};
+    x[0] = (Curve){CURVE_TYPE_ARC, .c.arc = {0,  1, SM / 2, 0, PI * 2 * SM}};
+    x[1] = (Curve){CURVE_TYPE_ARC, .c.arc = {0, -1, SM / 2, 0, PI * 2 * SM}};
+    x[2] = (Curve){CURVE_TYPE_LINE, .c.line = {-99, -SM / 2, 0, 98 + SM}};
+    x[3] = (Curve){CURVE_TYPE_LINE, .c.line = {-99,  SM / 2, 0, 98 + SM}};
+    x[4] = (Curve){CURVE_TYPE_LINE, .c.line = {-99, -SM / 2, PI / 2, SM}};
+    x[5] = (Curve){CURVE_TYPE_LINE, .c.line = {SM - 1, -SM / 2, PI / 2, SM}};
 
     for (size_t i = 0; i < l * 4; ++i) {
         for (size_t j = 0; j < 6; ++j) {
@@ -189,21 +189,21 @@ static bool detectCollision(size_t l, const Curve *c) {
 static bool detectCurveCollision(Curve a, Curve b) {
     if (a.type == CURVE_TYPE_ARC) {
         if (b.type == CURVE_TYPE_ARC) {
-            if (collArcArc(a.curve.arc, b.curve.arc)) {
+            if (collArcArc(a.c.arc, b.c.arc)) {
                 return true;
             }
         } else {
-            if (collLineArc(b.curve.line, a.curve.arc)) {
+            if (collLineArc(b.c.line, a.c.arc)) {
                 return true;
             }
         }
     } else {
         if (b.type == CURVE_TYPE_ARC) {
-            if (collLineArc(a.curve.line, b.curve.arc)) {
+            if (collLineArc(a.c.line, b.c.arc)) {
                 return true;
             }
         } else {
-            if (collLineLine(a.curve.line, b.curve.line)) {
+            if (collLineLine(a.c.line, b.c.line)) {
                 return true;
             }
         }
@@ -213,7 +213,7 @@ static bool detectCurveCollision(Curve a, Curve b) {
 
 static bool collLineLine(Line a, Line b) {
     double l1, l2;
-    if (fabs(a.a - b.a) < ZERO_TOLERANCE) {
+    if (IS0(a.a - b.a)) {
         double l = len(a.x, a.y, b.x, b.y);
         if (l > a.l && l > b.l) {
             return false;
@@ -222,8 +222,8 @@ static bool collLineLine(Line a, Line b) {
         double y1 = a.y + sin(a.a) * l;
         double x2 = b.x + cos(b.a) * l;
         double y2 = b.y + sin(b.a) * l;
-        bool c1 = (fabs(x1 - b.x) < ZERO_TOLERANCE) && (fabs(y1 - b.y) < ZERO_TOLERANCE);
-        bool c2 = (fabs(x2 - a.x) < ZERO_TOLERANCE) && (fabs(y2 - a.y) < ZERO_TOLERANCE);
+        bool c1 = (IS0(x1 - b.x) && IS0(y1 - b.y));
+        bool c2 = (IS0(x2 - a.x) && IS0(y2 - a.y));
         return c1 || c2;
     } else if (fabs(cos(a.a)) > fabs(sin(a.a))) {
         l2 = (a.y - b.y + tan(a.a) * (b.x - a.x)) / (sin(b.a) - tan(a.a) * cos(b.a));
@@ -243,13 +243,13 @@ static bool collLineArc(Line a, Arc b) {
     double D = s(B) - 4 * A * C;
     size_t n = 0;
     double l[2];
-    if (D > ZERO_TOLERANCE) {
+    if (IS0(D)) {
+        n = 1;
+        l[0] = -B / (2 * A);
+    } else if (D > 0) {
         n = 2;
         l[0] = (-B + sqrt(D)) / (2 * A);
         l[1] = (-B - sqrt(D)) / (2 * A);
-    } else if (D >= 0) {
-        n = 1;
-        l[0] = -B / (2 * A);
     }
     for (size_t i = 0; i < n; ++i) {
         double x = a.x + cos(a.a) * l[i];
@@ -287,47 +287,47 @@ static bool collArcArc(Arc a, Arc b) {
 static size_t collCircleCircle(Circle a, Circle b, double *x, double *y) {
     double dx = b.x - a.x;
     double dy = b.y - a.y;
-    if (fabs(dx) > ZERO_TOLERANCE && fabs(dx) > fabs(dy)) {
+    if (!IS0(dx) && fabs(dx) > fabs(dy)) {
         double xy = (a.y - b.y) / dx;
         double x0 = (s(a.r) - s(b.r) - s(a.x) + s(b.x) - s(a.y) + s(b.y)) / dx / 2;
         double A = s(xy) + 1;
         double B = 2 * (xy * x0 - xy * a.x - a.y);
         double C = s(x0) - 2 * x0 * a.x + s(a.x) + s(a.y) - s(a.r);
         double D = s(B) - 4 * A * C;
-        if (D > ZERO_TOLERANCE) {
+        if (IS0(D)) {
+            y[0] = -B / (2 * A);
+            x[0] = xy * y[0] + x0;
+            return 1;
+        } else if (D > 0) {
             y[0] = (-B + sqrt(D)) / (2 * A);
             x[0] = xy * y[0] + x0;
             y[1] = (-B - sqrt(D)) / (2 * A);
             x[1] = xy * y[1] + x0;
             return 2;
-        } else if (D >= 0) {
-            y[0] = -B / (2 * A);
-            x[0] = xy * y[0] + x0;
-            return 1;
         } else {
             return 0;
         }
-    } else if (fabs(dy) > ZERO_TOLERANCE) {
+    } else if (!IS0(dy)) {
         double yx = (a.x - b.x) / dy;
         double y0 = (s(a.r) - s(b.r) - s(a.x) + s(b.x) - s(a.y) + s(b.y)) / dy / 2;
         double A = s(yx) + 1;
         double B = 2 * (yx * y0 - yx * a.y - a.x);
         double C = s(y0) - 2 * y0 * a.y + s(a.x) + s(a.y) - s(a.r);
         double D = s(B) - 4 * A * C;
-        if (D > ZERO_TOLERANCE) {
+        if (IS0(D)) {
+            x[0] = -B / (2 * A);
+            y[0] = yx * x[0] + y0;
+            return 1;
+        } else if (D > 0) {
             x[0] = (-B + sqrt(D)) / (2 * A);
             y[0] = yx * x[0] + y0;
             x[1] = (-B - sqrt(D)) / (2 * A);
             y[1] = yx * x[1] + y0;
             return 2;
-        } else if (D >= 0) {
-            x[0] = -B / (2 * A);
-            y[0] = yx * x[0] + y0;
-            return 1;
         } else {
             return 0;
         }
-    } else if (fabs(a.r - b.r) < ZERO_TOLERANCE) {
+    } else if (IS0(a.r - b.r)) {
         return (size_t)-1;
     } else {
         return 0;
