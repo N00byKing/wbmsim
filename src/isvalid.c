@@ -7,11 +7,6 @@
 #define SM 0.99
 #define IS0(x) (fabs(x)<0.0009765625)
 
-typedef enum {
-    CURVE_TYPE_LINE,
-    CURVE_TYPE_ARC
-} CurveType;
-
 typedef struct {
     double x, y, a, l;
 } Line;
@@ -25,7 +20,7 @@ typedef struct {
 } Circle;
 
 typedef struct {
-    CurveType type;
+    bool isArc;
     union {
         Line line;
         Arc arc;
@@ -141,17 +136,18 @@ static void buildLine(Curve *c, Line line, double t) {
     double y2 = line.y + sin(line.a + PI / 2) * t / 2;
     double x3 = x1 + cos(line.a) * line.l;
     double y3 = y1 + sin(line.a) * line.l;
-    c[0] = (Curve){CURVE_TYPE_LINE, .c.line = {x1, y1, line.a, line.l}};
-    c[1] = (Curve){CURVE_TYPE_LINE, .c.line = {x2, y2, line.a, line.l}};
-    c[2] = (Curve){CURVE_TYPE_LINE, .c.line = {x1, y1, line.a + PI / 2, t}};
-    c[3] = (Curve){CURVE_TYPE_LINE, .c.line = {x3, y3, line.a + PI / 2, t}};
+    c[0] = (Curve){false, .c.line = {x1, y1, line.a, line.l}};
+    c[1] = (Curve){false, .c.line = {x2, y2, line.a, line.l}};
+    c[2] = (Curve){false, .c.line = {x1, y1, line.a + PI / 2, t}};
+    c[3] = (Curve){false, .c.line = {x3, y3, line.a + PI / 2, t}};
 }
 
 static void buildArc(Curve *c, Arc arc, double t) {
-    c[0] = (Curve){CURVE_TYPE_LINE, .c.line = {arc.x + cos(arc.o) * (arc.r - t / 2), arc.y + sin(arc.o) * (arc.r - t / 2), arc.o, t}};
-    c[1] = (Curve){CURVE_TYPE_LINE, .c.line = {arc.x + cos(arc.o + arc.a) * (arc.r - t / 2), arc.y + sin(arc.o + arc.a) * (arc.r - t / 2), arc.o + arc.a, t}};
-    c[2] = (Curve){CURVE_TYPE_ARC, .c.arc = {arc.x, arc.y, arc.r - t / 2, arc.o, arc.a}};
-    c[3] = (Curve){CURVE_TYPE_ARC, .c.arc = {arc.x, arc.y, arc.r + t / 2, arc.o, arc.a}};
+    double r = arc.r - t / 2;
+    c[0] = (Curve){false, .c.line = {arc.x + cos(arc.o) * r, arc.y + sin(arc.o) * r, arc.o, t}};
+    c[1] = (Curve){false, .c.line = {arc.x + cos(arc.o + arc.a) * r, arc.y + sin(arc.o + arc.a) * r, arc.o + arc.a, t}};
+    c[2] = (Curve){true, .c.arc = {arc.x, arc.y, r, arc.o, arc.a}};
+    c[3] = (Curve){true, .c.arc = {arc.x, arc.y, r + t, arc.o, arc.a}};
 }
 
 static bool detectCollision(size_t l, const Curve *c) {
@@ -168,12 +164,12 @@ static bool detectCollision(size_t l, const Curve *c) {
     }
 
     Curve x[6];
-    x[0] = (Curve){CURVE_TYPE_ARC, .c.arc = {0,  1, SM / 2, 0, PI * 2 * SM}};
-    x[1] = (Curve){CURVE_TYPE_ARC, .c.arc = {0, -1, SM / 2, 0, PI * 2 * SM}};
-    x[2] = (Curve){CURVE_TYPE_LINE, .c.line = {-99, -SM / 2, 0, 98 + SM}};
-    x[3] = (Curve){CURVE_TYPE_LINE, .c.line = {-99,  SM / 2, 0, 98 + SM}};
-    x[4] = (Curve){CURVE_TYPE_LINE, .c.line = {-99, -SM / 2, PI / 2, SM}};
-    x[5] = (Curve){CURVE_TYPE_LINE, .c.line = {SM - 1, -SM / 2, PI / 2, SM}};
+    x[0] = (Curve){true, .c.arc = {0,  1, SM / 2, 0, PI * 2 * SM}};
+    x[1] = (Curve){true, .c.arc = {0, -1, SM / 2, 0, PI * 2 * SM}};
+    x[2] = (Curve){false, .c.line = {-99, -SM / 2, 0, 98 + SM}};
+    x[3] = (Curve){false, .c.line = {-99,  SM / 2, 0, 98 + SM}};
+    x[4] = (Curve){false, .c.line = {-99, -SM / 2, PI / 2, SM}};
+    x[5] = (Curve){false, .c.line = {SM - 1, -SM / 2, PI / 2, SM}};
 
     for (size_t i = 0; i < l * 4; ++i) {
         for (size_t j = 0; j < 6; ++j) {
@@ -187,8 +183,8 @@ static bool detectCollision(size_t l, const Curve *c) {
 }
 
 static bool detectCurveCollision(Curve a, Curve b) {
-    if (a.type == CURVE_TYPE_ARC) {
-        if (b.type == CURVE_TYPE_ARC) {
+    if (a.isArc) {
+        if (b.isArc) {
             if (collArcArc(a.c.arc, b.c.arc)) {
                 return true;
             }
@@ -198,7 +194,7 @@ static bool detectCurveCollision(Curve a, Curve b) {
             }
         }
     } else {
-        if (b.type == CURVE_TYPE_ARC) {
+        if (b.isArc) {
             if (collLineArc(a.c.line, b.c.arc)) {
                 return true;
             }
