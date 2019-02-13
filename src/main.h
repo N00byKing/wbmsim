@@ -9,12 +9,10 @@ extern struct S {
         int on;
         double start;
         char action;
-        double x, y, w, h;
     } animation;
     struct {
         size_t n, m;
         char active, *passive;
-        double x, y, w, h;
     } wire;
 } s;
 

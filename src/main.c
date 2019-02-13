@@ -35,7 +35,7 @@
 struct S s;
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
-static void draw(float ar);
+static void draw(int winW, int winH);
 static void drawBalls(void);
 static void drawBall(float cx, float cy, float a);
 static void drawActiveWire(void);
@@ -43,7 +43,7 @@ static void drawPassiveWire(void);
 static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
-static bool wireWillBeValid(char action, double *x, double *y, double *w, double *h);
+static bool wireWillBeValid(char action);
 
 int main(void) {
     glfwInit();
@@ -57,12 +57,9 @@ int main(void) {
 
         int winW, winH;
         glfwGetFramebufferSize(win, &winW, &winH);
-        rViewport(0, 0, winW, winH);
-        float ar = (float)winW / winH;
-        rPipe(ZOOM / ar, ZOOM, 0, 0);
 
         rClear(0, 0, 0);
-        draw(ar);
+        draw(winW, winH);
         glfwSwapBuffers(win);
 
         stopAnimation();
@@ -88,14 +85,17 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
     return win;
 }
 
-static void draw(float ar) {
+static void draw(int winW, int winH) {
+    float ar = (float)winW / (float)winH;
+    rViewport(0, 0, winW, winH);
+    rPipe(ZOOM / ar, ZOOM, 0, 0);
     batchRect(&s.b, (const float[]){-ar / ZOOM, -WT / 2 + CY, ar / ZOOM + CX, WT}, WC);
     drawBalls();
     drawActiveWire();
@@ -279,7 +279,7 @@ static void drawPassiveWire(void) {
 static void drawPassiveStaticWire(const float *matrix) {
     size_t oldnv = s.b.nv;
     char dir = s.wire.active;
-    double x, y;
+    float x, y;
     if (s.wire.active == 'U') {
         x = y = WT;
     } else if (s.wire.active == 'D') {
@@ -384,10 +384,6 @@ static void stopAnimation(void) {
     } else if (s.animation.action == 'D' && s.wire.active != 'L') {
         s.wire.active = 'D';
     }
-    s.wire.x = s.animation.x;
-    s.wire.y = s.animation.y;
-    s.wire.w = s.animation.w;
-    s.wire.h = s.animation.h;
 }
 
 static void startAnimation(GLFWwindow *win) {
@@ -407,7 +403,7 @@ static void startAnimation(GLFWwindow *win) {
         s.animation.on = (s.wire.active != 'L');
         s.animation.action = 'L';
     } else if (right) {
-        if (!wireWillBeValid('R', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
+        if (!wireWillBeValid('R')) {
             s.animation.on = 0;
             return;
         }
@@ -422,13 +418,13 @@ static void startAnimation(GLFWwindow *win) {
         s.animation.action = 'R';
         s.wire.active = 'L';
     } else if (up) {
-        if (wireWillBeValid('U', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
+        if (wireWillBeValid('U')) {
             s.animation.action = 'U';
         } else {
             s.animation.on = 0;
         }
     } else if (down) {
-        if (wireWillBeValid('D', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
+        if (wireWillBeValid('D')) {
             s.animation.action = 'D';
         } else {
             s.animation.on = 0;
@@ -436,7 +432,9 @@ static void startAnimation(GLFWwindow *win) {
     }
 }
 
-static bool wireWillBeValid(char action, double *x, double *y, double *w, double *h) {
+static bool wireWillBeValid(char action) {
+    // TODO: remove messing with the s.wire.passive; char *makeFullWire(char action);
+    // TODO: split wireWillBeValid() from wireFutureSize()
     if (s.wire.n + 4 >= s.wire.m) {
         s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
         s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
@@ -456,7 +454,6 @@ static bool wireWillBeValid(char action, double *x, double *y, double *w, double
         }
     }
     bool valid = isValidWire(s.wire.passive);
-    getWireSize(s.wire.passive, x, y, w, h);
     s.wire.passive[s.wire.n] = 0;
 
     return valid;

@@ -5,8 +5,8 @@
 #include <math.h>
 
 #define IS0(x) (fabs(x)<0.0009765625)
-#define MAX(x,y) ((x)>(y)?(x):(y))
 #define MIN(x,y) ((x)<(y)?(x):(y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
 
 #define PI 3.1415926535
 #define SM 0.99
@@ -365,11 +365,11 @@ void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
     size_t l = strlen(wire);
     for (size_t i = l - 1; i <= l; --i) {
         if (dir == 'U') {
-            if (w[i] == 'U') {
+            if (wire[i] == 'U') {
                 rX -= 1;
                 rY += 1;
                 dir = 'L';
-            } else if (w[i] == 'D') {
+            } else if (wire[i] == 'D') {
                 rX += 1;
                 rY += 1;
                 dir = 'R';
@@ -377,11 +377,11 @@ void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
                 rY += PI / 2;
             }
         } else if (dir == 'D') {
-            if (w[i] == 'U') {
+            if (wire[i] == 'U') {
                 rX += 1;
                 rY -= 1;
                 dir = 'R';
-            } else if (w[i] == 'D') {
+            } else if (wire[i] == 'D') {
                 rX -= 1;
                 rY -= 1;
                 dir = 'L';
@@ -389,11 +389,11 @@ void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
                 rY -= PI / 2;
             }
         } else if (dir == 'L') {
-            if (w[i] == 'U') {
+            if (wire[i] == 'U') {
                 rX -= 1;
                 rY -= 1;
                 dir = 'D';
-            } else if (w[i] == 'D') {
+            } else if (wire[i] == 'D') {
                 rX -= 1;
                 rY += 1;
                 dir = 'U';
@@ -401,16 +401,16 @@ void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
                 rX -= PI / 2;
             }
         } else {
-            if (w[i] == 'U') {
+            if (wire[i] == 'U') {
                 rX += 1;
                 rY += 1;
                 dir = 'U';
-            } else if (w[i] == 'D') {
+            } else if (wire[i] == 'D') {
                 rX += 1;
                 rY -= 1;
                 dir = 'D';
             } else {
-            rX += PI / 2;
+                rX += PI / 2;
             }
         }
         *x = MIN(rX, *x);
@@ -418,4 +418,6 @@ void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
         *w = MAX(rX, *w);
         *h = MAX(rY, *h);
     }
+    *w = *x < 0 ? *w - *x : *w;
+    *h = *y < 0 ? *h - *y : *h;
 }
