@@ -388,7 +388,6 @@ static void stopAnimation(void) {
     s.wire.y = s.animation.y;
     s.wire.w = s.animation.w;
     s.wire.h = s.animation.h;
-    printf("%f %f %f %f\n", s.wire.x, s.wire.y, s.wire.w, s.wire.h);
 }
 
 static void startAnimation(GLFWwindow *win) {
@@ -459,7 +458,6 @@ static bool wireWillBeValid(char action, double *x, double *y, double *w, double
     bool valid = isValidWire(s.wire.passive);
     getWireSize(s.wire.passive, x, y, w, h);
     s.wire.passive[s.wire.n] = 0;
-    printf("%d\n", valid);
 
     return valid;
 }

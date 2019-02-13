@@ -224,14 +224,14 @@ static bool collLineLine(Line a, Line b) {
         if (l > a.l && l > b.l && la > a.l && lb > b.l) {
             return false;
         }
-        double x1 = a.x + cos(a.a) * l;
-        double y1 = a.y + sin(a.a) * l;
-        double x2 = b.x + cos(b.a) * l;
-        double y2 = b.y + sin(b.a) * l;
-        double x3 = a.x + cos(a.a) * la;
-        double y3 = a.y + sin(a.a) * la;
-        double x4 = b.x + cos(b.a) * lb;
-        double y4 = b.y + sin(b.a) * lb;
+        double x1 = a.x + cos(a.a) * MIN(l, a.l);
+        double y1 = a.y + sin(a.a) * MIN(l, a.l);
+        double x2 = b.x + cos(b.a) * MIN(l, b.l);
+        double y2 = b.y + sin(b.a) * MIN(l, b.l);
+        double x3 = a.x + cos(a.a) * MIN(la, a.l);
+        double y3 = a.y + sin(a.a) * MIN(la, a.l);
+        double x4 = b.x + cos(b.a) * MIN(lb, b.l);
+        double y4 = b.y + sin(b.a) * MIN(lb, b.l);
         bool c1 = (IS0(x1 - b.x) && IS0(y1 - b.y));
         bool c2 = (IS0(x2 - a.x) && IS0(y2 - a.y));
         bool c3 = (IS0(x3 - bx) && IS0(y3 - by));
@@ -248,7 +248,6 @@ static bool collLineLine(Line a, Line b) {
 }
 
 static bool collLineArc(Line a, Arc b) {
-
     double A = 1;
     double B = 2 * (cos(a.a) * (a.x - b.x) + sin(a.a) * (a.y - b.y));
     double C = s(a.x) - 2 * a.x * b.x + s(b.x) + s(a.y) - 2 * a.y * b.y + s(b.y) - s(b.r);
