@@ -1,3 +1,4 @@
+// TODO: rename to wireOp*
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -210,18 +211,29 @@ static bool detectCurveCollision(Curve a, Curve b) {
 static bool collLineLine(Line a, Line b) {
     double l1, l2;
     if (IS0(a.a - b.a)) {
-        // FIXME: won't detect when aStart reaches bEnd or bStart reaches aEnd
+        double ax = a.x + cos(a.a) * a.l;
+        double ay = a.y + sin(a.a) * a.l;
+        double bx = b.x + cos(b.a) * b.l;
+        double by = b.y + sin(b.a) * b.l;
         double l = len(a.x, a.y, b.x, b.y);
-        if (l > a.l && l > b.l) {
+        double la = len(a.x, a.y, bx, by);
+        double lb = len(b.x, b.y, ax, ay);
+        if (l > a.l && l > b.l && la > a.l && lb > b.l) {
             return false;
         }
         double x1 = a.x + cos(a.a) * l;
         double y1 = a.y + sin(a.a) * l;
         double x2 = b.x + cos(b.a) * l;
         double y2 = b.y + sin(b.a) * l;
+        double x3 = a.x + cos(a.a) * la;
+        double y3 = a.y + sin(a.a) * la;
+        double x4 = b.x + cos(b.a) * lb;
+        double y4 = b.y + sin(b.a) * lb;
         bool c1 = (IS0(x1 - b.x) && IS0(y1 - b.y));
         bool c2 = (IS0(x2 - a.x) && IS0(y2 - a.y));
-        return c1 || c2;
+        bool c3 = (IS0(x3 - bx) && IS0(y3 - by));
+        bool c4 = (IS0(x4 - ax) && IS0(y4 - ay));
+        return c1 || c2 || c3 || c4;
     } else if (fabs(cos(a.a)) > fabs(sin(a.a))) {
         l2 = (a.y - b.y + tan(a.a) * (b.x - a.x)) / (sin(b.a) - tan(a.a) * cos(b.a));
         l1 = (b.x - a.x + cos(b.a) * l2) / cos(a.a);

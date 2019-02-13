@@ -16,4 +16,5 @@ extern struct S {
     } wire;
 } s;
 
+// TODO: rename to wireOp*
 bool isValidWire(const char *w);
