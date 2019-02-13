@@ -44,6 +44,7 @@ static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
 static bool wireWillBeValid(char action);
+static char *makeFullWire(char action);
 
 int main(void) {
     glfwInit();
@@ -433,28 +434,27 @@ static void startAnimation(GLFWwindow *win) {
 }
 
 static bool wireWillBeValid(char action) {
-    // TODO: remove messing with the s.wire.passive; char *makeFullWire(char action);
-    // TODO: split wireWillBeValid() from wireFutureSize()
-    if (s.wire.n + 4 >= s.wire.m) {
-        s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
-        s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
-    }
-
-    if (action == 'U' || action == 'D') {
-        s.wire.passive[s.wire.n] = action;
-        s.wire.passive[s.wire.n + 1] = 0;
-    } else {
-        if (s.wire.active != 'L') {
-            s.wire.passive[s.wire.n] = s.wire.active;
-            s.wire.passive[s.wire.n + 1] = action;
-            s.wire.passive[s.wire.n + 2] = 0;
-        } else {
-            s.wire.passive[s.wire.n] = action;
-            s.wire.passive[s.wire.n + 1] = 0;
-        }
-    }
-    bool valid = isValidWire(s.wire.passive);
-    s.wire.passive[s.wire.n] = 0;
-
+    char *w = makeFullWire(action);
+    bool valid = isValidWire(w);
+    free(w);
     return valid;
+}
+
+static char *makeFullWire(char action) {
+    // TODO: use static variables to boost performance
+    char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) :malloc(s.wire.n + 3);
+    if (action == 'R') {
+        if (s.wire.active == 'L') {
+            w[0] = 'R';
+            w[1] = 0;
+        } else {
+            w[s.wire.n + 0] = s.wire.active;
+            w[s.wire.n + 1] = 'R';
+            w[s.wire.n + 2] = 0;
+        }
+    } else {
+        w[s.wire.n + 0] = s.wire.active;
+        w[s.wire.n + 1] = 0;
+    }
+    return w;
 }
