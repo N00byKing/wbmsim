@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define IS0(x) (fabs(x)<0.0009765625)
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x,y) ((x)<(y)?(x):(y))
+
 #define PI 3.1415926535
 #define SM 0.99
-#define IS0(x) (fabs(x)<0.0009765625)
 
 typedef struct {
     double x, y, a, l;
@@ -353,4 +356,67 @@ static double ctg(double a) {
 
 static double len(double x1, double y1, double x2, double y2) {
     return sqrt(s(x1 - x2) + s(y1 - y2));
+}
+
+void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
+    *x = *y = *w = *h = 0;
+    double rX = 0;
+    double rY = 0;
+    char dir = 'R';
+    size_t l = strlen(wire);
+    for (size_t i = l - 1; i <= l; --i) {
+        if (dir == 'U') {
+            if (w[i] == 'U') {
+                rX -= 1;
+                rY += 1;
+                dir = 'L';
+            } else if (w[i] == 'D') {
+                rX += 1;
+                rY += 1;
+                dir = 'R';
+            } else {
+                rY += PI / 2;
+            }
+        } else if (dir == 'D') {
+            if (w[i] == 'U') {
+                rX += 1;
+                rY -= 1;
+                dir = 'R';
+            } else if (w[i] == 'D') {
+                rX -= 1;
+                rY -= 1;
+                dir = 'L';
+            } else {
+                rY -= PI / 2;
+            }
+        } else if (dir == 'L') {
+            if (w[i] == 'U') {
+                rX -= 1;
+                rY -= 1;
+                dir = 'D';
+            } else if (w[i] == 'D') {
+                rX -= 1;
+                rY += 1;
+                dir = 'U';
+            } else {
+                rX -= PI / 2;
+            }
+        } else {
+            if (w[i] == 'U') {
+                rX += 1;
+                rY += 1;
+                dir = 'U';
+            } else if (w[i] == 'D') {
+                rX += 1;
+                rY -= 1;
+                dir = 'D';
+            } else {
+            rX += PI / 2;
+            }
+        }
+        *x = MIN(rX, *x);
+        *y = MIN(rY, *y);
+        *w = MAX(rX, *w);
+        *h = MAX(rY, *h);
+    }
 }

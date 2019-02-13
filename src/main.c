@@ -43,7 +43,7 @@ static void drawPassiveWire(void);
 static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
-static bool wireWillBeValid(char action);
+static bool wireWillBeValid(char action, double *x, double *y, double *w, double *h);
 
 int main(void) {
     glfwInit();
@@ -88,7 +88,7 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
@@ -384,6 +384,11 @@ static void stopAnimation(void) {
     } else if (s.animation.action == 'D' && s.wire.active != 'L') {
         s.wire.active = 'D';
     }
+    s.wire.x = s.animation.x;
+    s.wire.y = s.animation.y;
+    s.wire.w = s.animation.w;
+    s.wire.h = s.animation.h;
+    printf("%f %f %f %f\n", s.wire.x, s.wire.y, s.wire.w, s.wire.h);
 }
 
 static void startAnimation(GLFWwindow *win) {
@@ -403,7 +408,7 @@ static void startAnimation(GLFWwindow *win) {
         s.animation.on = (s.wire.active != 'L');
         s.animation.action = 'L';
     } else if (right) {
-        if (!wireWillBeValid('R')) {
+        if (!wireWillBeValid('R', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
             s.animation.on = 0;
             return;
         }
@@ -418,13 +423,13 @@ static void startAnimation(GLFWwindow *win) {
         s.animation.action = 'R';
         s.wire.active = 'L';
     } else if (up) {
-        if (wireWillBeValid('U')) {
+        if (wireWillBeValid('U', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
             s.animation.action = 'U';
         } else {
             s.animation.on = 0;
         }
     } else if (down) {
-        if (wireWillBeValid('D')) {
+        if (wireWillBeValid('D', &s.animation.x, &s.animation.y, &s.animation.w, &s.animation.h)) {
             s.animation.action = 'D';
         } else {
             s.animation.on = 0;
@@ -432,7 +437,7 @@ static void startAnimation(GLFWwindow *win) {
     }
 }
 
-static bool wireWillBeValid(char action) {
+static bool wireWillBeValid(char action, double *x, double *y, double *w, double *h) {
     if (s.wire.n + 4 >= s.wire.m) {
         s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
         s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
@@ -452,7 +457,9 @@ static bool wireWillBeValid(char action) {
         }
     }
     bool valid = isValidWire(s.wire.passive);
+    getWireSize(s.wire.passive, x, y, w, h);
     s.wire.passive[s.wire.n] = 0;
+    printf("%d\n", valid);
 
     return valid;
 }

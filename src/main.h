@@ -9,12 +9,15 @@ extern struct S {
         int on;
         double start;
         char action;
+        double x, y, w, h;
     } animation;
     struct {
         size_t n, m;
         char active, *passive;
+        double x, y, w, h;
     } wire;
 } s;
 
 // TODO: rename to wireOp*
 bool isValidWire(const char *w);
+void getWireSize(const char *wire, double *x, double *y, double *w, double *h);
