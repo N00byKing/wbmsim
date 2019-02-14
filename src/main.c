@@ -442,7 +442,7 @@ static bool wireWillBeValid(char action) {
 
 static char *makeFullWire(char action) {
     // TODO: use static variables to boost performance
-    char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) :malloc(s.wire.n + 3);
+    char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) : malloc(s.wire.n + 3);
     if (action == 'R') {
         if (s.wire.active == 'L') {
             w[0] = 'R';
@@ -453,7 +453,7 @@ static char *makeFullWire(char action) {
             w[s.wire.n + 2] = 0;
         }
     } else {
-        w[s.wire.n + 0] = s.wire.active;
+        w[s.wire.n + 0] = action;
         w[s.wire.n + 1] = 0;
     }
     return w;
