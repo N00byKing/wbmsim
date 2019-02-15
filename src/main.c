@@ -10,16 +10,19 @@
 
 bool wOpIsValid(const char *w); // src/wop.c
 
+#define PI 3.1415926535
+
+#define QQ 40 // Quality of Quarter rings
+#define QC 40 // Quality of Circle
+#define QCS 8 // Quality of Circle Screw
+
 #define WIN_T "Wire Bending Machine Simulator"
 #define OGL_API GLFW_OPENGL_ES_API
 #define OGL_V 20
 #define VSYNC 1
 #define MSAA 16
 #define ZOOM 0.25
-#define PI 3.1415926535
-#define QQ 40 // Quality of Quarter rings
-#define QC 40 // Quality of Circle
-#define QCS 8 // Quality of Circle Screw
+
 #define WT 1.0 // Wire thickness
 #define CX 0.0 // Center X
 #define CY 0.0 // Center Y
@@ -27,10 +30,12 @@ bool wOpIsValid(const char *w); // src/wop.c
 #define CSR (WT * 0.05) // Circle Screw Radius
 #define CSO (WT * 0.5 - WT * 0.15) // Circle Screw Offset from circle
 #define CSN 8 // Circle Screw Count
+
 #define CSC (const uint8_t[]){64, 64, 64} // Circle Screw Color
 #define WC (const uint8_t[]){255, 255, 255} // Wire Color
 #define CC (const uint8_t[]){128, 128, 128} // Circle Color
 #define CCC (const uint8_t[]){64, 64, 64} // Circle Contour Color
+
 #define DT 1.0 // Animation duration
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
