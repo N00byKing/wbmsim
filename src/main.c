@@ -7,7 +7,8 @@
 #include <GLFW/glfw3.h>
 
 #include "../lib/lib.h"
-#include "main.h"
+
+bool wOpIsValid(const char *w); // src/wop.c
 
 #define WIN_T "Wire Bending Machine Simulator"
 #define OGL_API GLFW_OPENGL_ES_API
@@ -15,6 +16,10 @@
 #define VSYNC 1
 #define MSAA 16
 #define ZOOM 0.25
+#define PI 3.1415926535
+#define QQ 40 // Quality of Quarter rings
+#define QC 40 // Quality of Circle
+#define QCS 8 // Quality of Circle Screw
 #define WT 1.0 // Wire thickness
 #define CX 0.0 // Center X
 #define CY 0.0 // Center Y
@@ -32,7 +37,18 @@
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define CLAMP(min,val,max) (MIN((max),MAX((min),(val))))
 
-struct S s;
+static struct S {
+    Batch b;
+    struct {
+        int on;
+        double start;
+        char action;
+    } animation;
+    struct {
+        size_t n, m;
+        char active, *passive;
+    } wire;
+} s;
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void draw(int winW, int winH);
