@@ -40,7 +40,7 @@ bool wOpIsValid(const char *w); // src/wop.c
 static struct S {
     Batch b;
     struct {
-        int on;
+        bool on;
         double start;
         char action;
     } animation;
@@ -408,44 +408,32 @@ static void startAnimation(GLFWwindow *win) {
     int right = glfwGetKey(win, GLFW_KEY_RIGHT);
     int up = glfwGetKey(win, GLFW_KEY_UP);
     int down = glfwGetKey(win, GLFW_KEY_DOWN);
+    char action = left ? 'L' : right ? 'R' : up ? 'U' : down ? 'D' : 0;
 
-    if (s.animation.on || !(left || right || up || down)) {
+    if (s.animation.on
+    || action == 0
+    || (left && s.wire.active == 'L')
+    || !wireWillBeValid(action)
+    ) {
         return;
     }
 
-    s.animation.on = 1;
+    s.animation.on = true;
     s.animation.start = glfwGetTime();
 
-    if (left) {
-        s.animation.on = (s.wire.active != 'L');
-        s.animation.action = 'L';
-    } else if (right) {
-        if (!wireWillBeValid('R')) {
-            s.animation.on = 0;
-            return;
-        }
+    if (s.wire.n >= s.wire.m) {
+        s.wire.m = s.wire.m ? s.wire.m * 2 : 64;
+        s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
+    }
+
+    s.animation.action = action;
+
+    if (right) {
         if (s.wire.active != 'L') {
-            if (s.wire.n >= s.wire.m) {
-                s.wire.m = s.wire.m ? 64 : s.wire.m * 2;
-                s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
-            }
             s.wire.passive[s.wire.n++] = s.wire.active;
             s.wire.passive[s.wire.n] = 0;
         }
-        s.animation.action = 'R';
         s.wire.active = 'L';
-    } else if (up) {
-        if (wireWillBeValid('U')) {
-            s.animation.action = 'U';
-        } else {
-            s.animation.on = 0;
-        }
-    } else if (down) {
-        if (wireWillBeValid('D')) {
-            s.animation.action = 'D';
-        } else {
-            s.animation.on = 0;
-        }
     }
 }
 
@@ -459,7 +447,9 @@ static bool wireWillBeValid(char action) {
 static char *makeFullWire(char action) {
     // TODO: use static variables to boost performance
     char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) : malloc(s.wire.n + 3);
-    if (action == 'R') {
+    if (action == 'L') {
+        w[s.wire.n] = 0;
+    } else if (action == 'R') {
         if (s.wire.active == 'L') {
             w[0] = 'R';
             w[1] = 0;
