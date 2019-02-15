@@ -435,7 +435,7 @@ static void startAnimation(GLFWwindow *win) {
 
 static bool wireWillBeValid(char action) {
     char *w = makeFullWire(action);
-    bool valid = isValidWire(w);
+    bool valid = wOpIsValid(w);
     free(w);
     return valid;
 }

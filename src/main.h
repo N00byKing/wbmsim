@@ -16,6 +16,4 @@ extern struct S {
     } wire;
 } s;
 
-// TODO: rename to wireOp*
-bool isValidWire(const char *w);
-void getWireSize(const char *wire, double *x, double *y, double *w, double *h);
+bool wOpIsValid(const char *w);

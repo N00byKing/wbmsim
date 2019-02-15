@@ -1,4 +1,3 @@
-// TODO: rename to wireOp*
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,7 +30,6 @@ typedef struct {
     } c;
 } Curve;
 
-bool isValidWire(const char *w);
 static Curve *buildCurve(const char *w);
 static void buildCurvePart(char w, double *x, double *y, char *dir, Curve *c);
 static void buildLine(Curve *c, Line line, double t);
@@ -46,7 +44,7 @@ static double s(double x);
 static double ctg(double a);
 static double len(double x1, double y1, double x2, double y2);
 
-bool isValidWire(const char *w) {
+bool wOpIsValid(const char *w) {
     Curve *c = buildCurve(w);
     bool collision = detectCollision(strlen(w), c);
     free(c);
@@ -355,69 +353,4 @@ static double ctg(double a) {
 
 static double len(double x1, double y1, double x2, double y2) {
     return sqrt(s(x1 - x2) + s(y1 - y2));
-}
-
-void getWireSize(const char *wire, double *x, double *y, double *w, double *h) {
-    *x = *y = *w = *h = 0;
-    double rX = 0;
-    double rY = 0;
-    char dir = 'R';
-    size_t l = strlen(wire);
-    for (size_t i = l - 1; i <= l; --i) {
-        if (dir == 'U') {
-            if (wire[i] == 'U') {
-                rX -= 1;
-                rY += 1;
-                dir = 'L';
-            } else if (wire[i] == 'D') {
-                rX += 1;
-                rY += 1;
-                dir = 'R';
-            } else {
-                rY += PI / 2;
-            }
-        } else if (dir == 'D') {
-            if (wire[i] == 'U') {
-                rX += 1;
-                rY -= 1;
-                dir = 'R';
-            } else if (wire[i] == 'D') {
-                rX -= 1;
-                rY -= 1;
-                dir = 'L';
-            } else {
-                rY -= PI / 2;
-            }
-        } else if (dir == 'L') {
-            if (wire[i] == 'U') {
-                rX -= 1;
-                rY -= 1;
-                dir = 'D';
-            } else if (wire[i] == 'D') {
-                rX -= 1;
-                rY += 1;
-                dir = 'U';
-            } else {
-                rX -= PI / 2;
-            }
-        } else {
-            if (wire[i] == 'U') {
-                rX += 1;
-                rY += 1;
-                dir = 'U';
-            } else if (wire[i] == 'D') {
-                rX += 1;
-                rY -= 1;
-                dir = 'D';
-            } else {
-                rX += PI / 2;
-            }
-        }
-        *x = MIN(rX, *x);
-        *y = MIN(rY, *y);
-        *w = MAX(rX, *w);
-        *h = MAX(rY, *h);
-    }
-    *w = *x < 0 ? *w - *x : *w;
-    *h = *y < 0 ? *h - *y : *h;
 }

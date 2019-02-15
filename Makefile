@@ -5,7 +5,7 @@ CFLAGS=-O -I/usr/local/include -I/usr/X11R6/include
 LDLIBS=-lm -lglfw -lGLESv2
 LDFLAGS=-s -L/usr/local/lib -L /usr/X11R6/lib
 
-SRCOBJ=src/main.o src/isvalid.o
+SRCOBJ=src/main.o src/wop.o
 LIBOBJ=lib/r.o lib/batch.o lib/mat.o
 OBJ=$(SRCOBJ) $(LIBOBJ)
 DST=wbmsim
