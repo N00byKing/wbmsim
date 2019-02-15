@@ -146,8 +146,10 @@ static void buildLine(Curve *c, Line line, double t) {
 
 static void buildArc(Curve *c, Arc arc, double t) {
     double r = arc.r - t / 2;
-    c[0] = (Curve){false, .c.line = {arc.x + cos(arc.o) * r, arc.y + sin(arc.o) * r, arc.o, t}};
-    c[1] = (Curve){false, .c.line = {arc.x + cos(arc.o + arc.a) * r, arc.y + sin(arc.o + arc.a) * r, arc.o + arc.a, t}};
+    double a1 = arc.o;
+    double a2 = arc.o + arc.a;
+    c[0] = (Curve){false, .c.line={arc.x+cos(a1)*r, arc.y+sin(a1)*r, a1, t}};
+    c[1] = (Curve){false, .c.line={arc.x+cos(a2)*r, arc.y+sin(a2)*r, a2, t}};
     c[2] = (Curve){true, .c.arc = {arc.x, arc.y, r, arc.o, arc.a}};
     c[3] = (Curve){true, .c.arc = {arc.x, arc.y, r + t, arc.o, arc.a}};
 }
@@ -236,10 +238,10 @@ static bool collLineLine(Line a, Line b) {
         bool c4 = (IS0(x4 - ax) && IS0(y4 - ay));
         return c1 || c2 || c3 || c4;
     } else if (fabs(cos(a.a)) > fabs(sin(a.a))) {
-        l2 = (a.y - b.y + tan(a.a) * (b.x - a.x)) / (sin(b.a) - tan(a.a) * cos(b.a));
+        l2 = (a.y-b.y+tan(a.a) * (b.x-a.x)) / (sin(b.a)-tan(a.a)*cos(b.a));
         l1 = (b.x - a.x + cos(b.a) * l2) / cos(a.a);
     } else {
-        l2 = (a.x - b.x + ctg(a.a) * (b.y - a.y)) / (cos(b.a) - ctg(a.a) * sin(b.a));
+        l2 = (a.x-b.x+ctg(a.a) * (b.y-a.y)) / (cos(b.a)-ctg(a.a)*sin(b.a));
         l1 = (b.y - a.y + sin(b.a) * l2) / sin(a.a);
     }
     return l1 >= 0 && l1 <= a.l && l2 >= 0 && l2 <= b.l;
@@ -248,7 +250,7 @@ static bool collLineLine(Line a, Line b) {
 static bool collLineArc(Line a, Arc b) {
     double A = 1;
     double B = 2 * (cos(a.a) * (a.x - b.x) + sin(a.a) * (a.y - b.y));
-    double C = s(a.x) - 2 * a.x * b.x + s(b.x) + s(a.y) - 2 * a.y * b.y + s(b.y) - s(b.r);
+    double C = s(a.x) - 2*a.x*b.x+s(b.x)+s(a.y) - 2*a.y*b.y+s(b.y)-s(b.r);
     double D = s(B) - 4 * A * C;
     size_t n = 0;
     double l[2];
@@ -274,7 +276,9 @@ static bool collLineArc(Line a, Arc b) {
 
 static bool collArcArc(Arc a, Arc b) {
     double x[2], y[2];
-    size_t n = collCircleCircle((Circle){a.x, a.y, a.r}, (Circle){b.x, b.y, b.r}, x, y);
+    Circle ca = {a.x, a.y, a.r};
+    Circle cb = {b.x, b.y, b.r};
+    size_t n = collCircleCircle(ca, cb, x, y);
     if (n == 0) {
         return false;
     } else if (n == (size_t)-1) {
@@ -298,7 +302,7 @@ static size_t collCircleCircle(Circle a, Circle b, double *x, double *y) {
     double dy = b.y - a.y;
     if (!IS0(dx) && fabs(dx) > fabs(dy)) {
         double xy = (a.y - b.y) / dx;
-        double x0 = (s(a.r) - s(b.r) - s(a.x) + s(b.x) - s(a.y) + s(b.y)) / dx / 2;
+        double x0 = (s(a.r)-s(b.r)-s(a.x)+s(b.x)-s(a.y)+s(b.y)) / dx / 2;
         double A = s(xy) + 1;
         double B = 2 * (xy * x0 - xy * a.x - a.y);
         double C = s(x0) - 2 * x0 * a.x + s(a.x) + s(a.y) - s(a.r);
@@ -318,7 +322,7 @@ static size_t collCircleCircle(Circle a, Circle b, double *x, double *y) {
         }
     } else if (!IS0(dy)) {
         double yx = (a.x - b.x) / dy;
-        double y0 = (s(a.r) - s(b.r) - s(a.x) + s(b.x) - s(a.y) + s(b.y)) / dy / 2;
+        double y0 = (s(a.r)-s(b.r)-s(a.x)+s(b.x)-s(a.y)+s(b.y)) / dy / 2;
         double A = s(yx) + 1;
         double B = 2 * (yx * y0 - yx * a.y - a.x);
         double C = s(y0) - 2 * y0 * a.y + s(a.x) + s(a.y) - s(a.r);

@@ -388,7 +388,7 @@ static void stopAnimation(void) {
     if (!s.animation.on || s.animation.start + DT >= glfwGetTime()) {
         return;
     }
-    s.animation.on = 0;
+    s.animation.on = false;
     if (s.animation.action == 'L') {
         s.wire.active = s.wire.n > 0 ? s.wire.passive[--s.wire.n] : 'L';
         if (s.wire.m) {
@@ -410,11 +410,7 @@ static void startAnimation(GLFWwindow *win) {
     int down = glfwGetKey(win, GLFW_KEY_DOWN);
     char action = left ? 'L' : right ? 'R' : up ? 'U' : down ? 'D' : 0;
 
-    if (s.animation.on
-    || action == 0
-    || (left && s.wire.active == 'L')
-    || !wireWillBeValid(action)
-    ) {
+    if (s.animation.on || !action || (left && !s.wire.n) || !wireWillBeValid(action)) {
         return;
     }
 
