@@ -7,8 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "../lib/lib.h"
-
-bool wOpIsValid(const char *w); // src/wop.c
+#include "wop.h"
 
 #define PI 3.1415926535
 
