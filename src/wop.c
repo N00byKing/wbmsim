@@ -358,3 +358,24 @@ static double ctg(double a) {
 static double len(double x1, double y1, double x2, double y2) {
     return sqrt(s(x1 - x2) + s(y1 - y2));
 }
+
+char *wOpNextW(const char *wire, char wActive, char action) {
+    size_t n = strlen(wire);
+    char *w = strcpy(malloc(n + 3), wire);
+    if (action == 'L') {
+        w[n] = '\0';
+    } else if (action == 'R') {
+        if (wActive == 'L') {
+            w[0] = 'R';
+            w[1] = '\0';
+        } else {
+            w[n + 0] = wActive;
+            w[n + 1] = 'R';
+            w[n + 2] = '\0';
+        }
+    } else {
+        w[n + 0] = action;
+        w[n + 1] = '\0';
+    }
+    return w;
+}

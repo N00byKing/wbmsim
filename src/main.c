@@ -67,7 +67,6 @@ static void drawPassiveStaticWire(const float *matrix);
 static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
 static bool wireWillBeValid(char action);
-static char *makeFullWire(char action);
 
 int main(void) {
     glfwInit();
@@ -453,28 +452,8 @@ static void startAnimation(GLFWwindow *win) {
 }
 
 static bool wireWillBeValid(char action) {
-    char *w = makeFullWire(action);
+    char *w = wOpNextW(s.wire.passive, s.wire.active, action);
     bool valid = wOpIsValid(w);
     free(w);
     return valid;
-}
-
-static char *makeFullWire(char action) {
-    char *w = strcpy(malloc(s.wire.n + 3), s.wire.passive);
-    if (action == 'L') {
-        w[s.wire.n] = '\0';
-    } else if (action == 'R') {
-        if (s.wire.active == 'L') {
-            w[0] = 'R';
-            w[1] = '\0';
-        } else {
-            w[s.wire.n + 0] = s.wire.active;
-            w[s.wire.n + 1] = 'R';
-            w[s.wire.n + 2] = '\0';
-        }
-    } else {
-        w[s.wire.n + 0] = action;
-        w[s.wire.n + 1] = '\0';
-    }
-    return w;
 }
