@@ -388,7 +388,7 @@ WOpRect wOpGetRect(const char *w) {
     double x = 0;
     double y = 0;
     char dir = 'R';
-    for (size_t i = l - 1; i < l; --l) {
+    for (size_t i = l - 1; i < l; --i) {
         if (dir == 'U') {
             if (w[i] == 'U') {
                 x -= 1;
@@ -445,5 +445,7 @@ WOpRect wOpGetRect(const char *w) {
     }
     r.w = r.x < 0 ? r.w - r.x : r.w;
     r.h = r.y < 0 ? r.h - r.y : r.h;
+    r.w = r.w > 0 ? r.w + 0.5 : r.w;
+    r.h = r.h > 0 ? r.h + 0.5 : r.h;
     return r;
 }

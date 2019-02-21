@@ -130,10 +130,19 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
 }
 
 static void draw(int winW, int winH) {
+    char *w = strcpy(malloc(s.wire.n + 2), s.wire.passive);
+    w[s.wire.n] = s.wire.active;
+    w[s.wire.n + 1] = 0;
+    WOpRect r = wOpGetRect(w);
+    free(w);
+    float rar = r.w / r.h;
     float ar = (float)winW / (float)winH;
+    float z = rar > ar ? ar / MAX(r.w, 0.001) : 1.0 / MAX(r.h, 0.001);
+    z = MIN(ZOOM, z);
     rViewport(0, 0, winW, winH);
-    rPipe(ZOOM / ar, ZOOM, 0, 0);
-    batchRect(&s.b, (const float[]){-ar / ZOOM, -WT / 2 + CY, ar / ZOOM + CX, WT}, WC);
+    rPipe(z / ar, z, 0, 0);
+    batchRect(&s.b, (const float[]){-ar / z, -WT / 2 + CY, ar / z + CX, WT}, WC);
+
     drawBalls();
     drawActiveWire();
     drawPassiveWire();
@@ -428,7 +437,7 @@ static void startAnimation(GLFWwindow *win) {
     int down = glfwGetKey(win, GLFW_KEY_DOWN);
     char action = left ? 'L' : right ? 'R' : up ? 'U' : down ? 'D' : '\0';
 
-    if (s.animation.on || !action || (left && !s.wire.n) || !wireWillBeValid(action)) {
+    if (s.animation.on || !action || (left && s.wire.active == 'L') || !wireWillBeValid(action)) {
         return;
     }
 
