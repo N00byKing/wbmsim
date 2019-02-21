@@ -14,7 +14,7 @@ $(DST): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 $(OBJ): lib/lib.h
-$(SRCOBJ): src/wop.h
+$(SRCOBJ): src/main.h
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 

@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "../lib/lib.h"
-#include "wop.h"
+#include "main.h"
 
 #define PI 3.1415926535
 
@@ -445,7 +445,6 @@ static bool wireWillBeValid(char action) {
 }
 
 static char *makeFullWire(char action) {
-    // TODO: use static variables to boost performance
     char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) : malloc(s.wire.n + 3);
     if (action == 'L') {
         w[s.wire.n] = 0;
