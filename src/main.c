@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include "../lib/lib.h"
-#include "main.h"
+#include "wop.h"
 
 #define PI 3.1415926535
 

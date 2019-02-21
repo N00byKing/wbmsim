@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "main.h"
+#include "wop.h"
 
 #define IS0(x) (fabs(x)<0.0009765625)
 #define MIN(x,y) ((x)<(y)?(x):(y))
