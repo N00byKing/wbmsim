@@ -54,6 +54,9 @@ static struct S {
     } wire;
 } s;
 
+static void initS(void);
+static void exitS(void);
+static void loop(GLFWwindow *win);
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void draw(int winW, int winH);
 static void drawBalls(void);
@@ -70,9 +73,28 @@ int main(void) {
     glfwInit();
     GLFWwindow *win = mkWin(WIN_T, OGL_API, OGL_V, VSYNC, MSAA);
     rInit();
-    memset(&s, 0, sizeof(s));
-    s.wire.active = 'L';
+    initS();
 
+    loop(win);
+
+    exitS();
+    rExit();
+    glfwTerminate();
+}
+
+static void initS(void) {
+    memset(&s, 0, sizeof(s));
+    s.wire.m = 64;
+    s.wire.active = 'L';
+    s.wire.passive = calloc(s.wire.m, 1);
+}
+
+static void exitS(void) {
+    free(s.wire.passive);
+    batchDel(&s.b);
+}
+
+static void loop(GLFWwindow *win) {
     while (!glfwWindowShouldClose(win)) {
         glfwPollEvents();
 
@@ -86,11 +108,6 @@ int main(void) {
         stopAnimation();
         startAnimation(win);
     }
-
-    free(s.wire.passive);
-    batchDel(&s.b);
-    rExit();
-    glfwTerminate();
 }
 
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
@@ -395,9 +412,7 @@ static void stopAnimation(void) {
     s.animation.on = false;
     if (s.animation.action == 'L') {
         s.wire.active = s.wire.n > 0 ? s.wire.passive[--s.wire.n] : 'L';
-        if (s.wire.m) {
-            s.wire.passive[s.wire.n] = 0;
-        }
+        s.wire.passive[s.wire.n] = '\0';
     } else if (s.animation.action == 'R') {
         s.wire.active = 'R';
     } else if (s.animation.action == 'U' && s.wire.active != 'L') {
@@ -412,7 +427,7 @@ static void startAnimation(GLFWwindow *win) {
     int right = glfwGetKey(win, GLFW_KEY_RIGHT);
     int up = glfwGetKey(win, GLFW_KEY_UP);
     int down = glfwGetKey(win, GLFW_KEY_DOWN);
-    char action = left ? 'L' : right ? 'R' : up ? 'U' : down ? 'D' : 0;
+    char action = left ? 'L' : right ? 'R' : up ? 'U' : down ? 'D' : '\0';
 
     if (s.animation.on || !action || (left && !s.wire.n) || !wireWillBeValid(action)) {
         return;
@@ -422,7 +437,7 @@ static void startAnimation(GLFWwindow *win) {
     s.animation.start = glfwGetTime();
 
     if (s.wire.n >= s.wire.m) {
-        s.wire.m = s.wire.m ? s.wire.m * 2 : 64;
+        s.wire.m = s.wire.m * 2;
         s.wire.passive = realloc(s.wire.passive, s.wire.m + 1);
     }
 
@@ -431,7 +446,7 @@ static void startAnimation(GLFWwindow *win) {
     if (right) {
         if (s.wire.active != 'L') {
             s.wire.passive[s.wire.n++] = s.wire.active;
-            s.wire.passive[s.wire.n] = 0;
+            s.wire.passive[s.wire.n] = '\0';
         }
         s.wire.active = 'L';
     }
@@ -445,21 +460,21 @@ static bool wireWillBeValid(char action) {
 }
 
 static char *makeFullWire(char action) {
-    char *w = s.wire.n > 0 ? strcpy(malloc(s.wire.n + 3), s.wire.passive) : malloc(s.wire.n + 3);
+    char *w = strcpy(malloc(s.wire.n + 3), s.wire.passive);
     if (action == 'L') {
-        w[s.wire.n] = 0;
+        w[s.wire.n] = '\0';
     } else if (action == 'R') {
         if (s.wire.active == 'L') {
             w[0] = 'R';
-            w[1] = 0;
+            w[1] = '\0';
         } else {
             w[s.wire.n + 0] = s.wire.active;
             w[s.wire.n + 1] = 'R';
-            w[s.wire.n + 2] = 0;
+            w[s.wire.n + 2] = '\0';
         }
     } else {
         w[s.wire.n + 0] = action;
-        w[s.wire.n + 1] = 0;
+        w[s.wire.n + 1] = '\0';
     }
     return w;
 }
