@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "main.h"
+
 #define IS0(x) (fabs(x)<0.0009765625)
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -378,4 +380,70 @@ char *wOpNextW(const char *wire, char wActive, char action) {
         w[n + 1] = '\0';
     }
     return w;
+}
+
+WOpRect wOpGetRect(const char *w) {
+    WOpRect r = {0, 0, 0, 0};
+    size_t l = strlen(w);
+    double x = 0;
+    double y = 0;
+    char dir = 'R';
+    for (size_t i = l - 1; i < l; --l) {
+        if (dir == 'U') {
+            if (w[i] == 'U') {
+                x -= 1;
+                y += 1;
+                dir = 'L';
+            } else if (w[i] == 'D') {
+                x += 1;
+                y += 1;
+                dir = 'R';
+            } else {
+                y += PI / 2;
+            }
+        } else if (dir == 'D') {
+            if (w[i] == 'U') {
+                x += 1;
+                y -= 1;
+                dir = 'R';
+            } else if (w[i] == 'D') {
+                x -= 1;
+                y -= 1;
+                dir = 'L';
+            } else {
+                y -= PI / 2;
+            }
+        } else if (dir == 'L') {
+            if (w[i] == 'U') {
+                x -= 1;
+                y -= 1;
+                dir = 'D';
+            } else if (w[i] == 'D') {
+                x -= 1;
+                y += 1;
+                dir = 'U';
+            } else {
+                x -= PI / 2;
+            }
+        } else {
+            if (w[i] == 'U') {
+                x += 1;
+                y += 1;
+                dir = 'U';
+            } else if (w[i] == 'D') {
+                x += 1;
+                y -= 1;
+                dir = 'D';
+            } else {
+                x += PI / 2;
+            }
+        }
+        r.x = MIN(r.x, x);
+        r.y = MIN(r.y, y);
+        r.w = MAX(r.w, x);
+        r.h = MAX(r.h, y);
+    }
+    r.w = r.x < 0 ? r.w - r.x : r.w;
+    r.h = r.y < 0 ? r.h - r.y : r.h;
+    return r;
 }
