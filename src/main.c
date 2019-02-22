@@ -1,3 +1,4 @@
+// TODO: test changing WT, CX and CY
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,6 +30,10 @@
 #define CSR (WT * 0.05) // Circle Screw Radius
 #define CSO (WT * 0.5 - WT * 0.15) // Circle Screw Offset from circle
 #define CSN 8 // Circle Screw Count
+#define CMAXX (-0.5 * WT) // Camera Maximum X
+#define CMAXY (-1.5 * WT)// Camera Maximum Y
+#define CMINW (1.0 * WT) // Camera Minimum W
+#define CMINH (3.0 * WT) // Camera Minimum H
 
 #define CSC (const uint8_t[]){64, 64, 64} // Circle Screw Color
 #define WC (const uint8_t[]){255, 255, 255} // Wire Color
@@ -59,6 +64,7 @@ static void exitS(void);
 static void loop(GLFWwindow *win);
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void draw(int winW, int winH);
+static float setMinCamRect(WOpRect r, float ar);
 static void drawBalls(void);
 static void drawBall(float cx, float cy, float a);
 static void drawActiveWire(void);
@@ -134,20 +140,44 @@ static void draw(int winW, int winH) {
     w[s.wire.n] = s.wire.active;
     w[s.wire.n + 1] = 0;
     WOpRect r = wOpGetRect(w);
+    r.x *= WT;
+    r.y *= WT;
+    r.w *= WT;
+    r.h *= WT;
+    if (CMAXX < r.x) {
+        r.w += r.x - CMAXX;
+        r.x = CMAXX;
+    }
+    if (CMAXY < r.y) {
+        r.h += r.y - CMAXY;
+        r.y = CMAXY;
+    }
+    r.w = MAX(CMINW, r.w);
+    r.h = MAX(CMINH, r.h);
     free(w);
-    float rar = r.w / r.h;
-    float ar = (float)winW / (float)winH;
-    float z = rar > ar ? ar / MAX(r.w, 0.001) : 1.0 / MAX(r.h, 0.001);
-    z = MIN(ZOOM, z);
     rViewport(0, 0, winW, winH);
-    rPipe(z / ar, z, 0, 0);
-    batchRect(&s.b, (const float[]){-ar / z, -WT / 2 + CY, ar / z + CX, WT}, WC);
+    float swl = setMinCamRect(r, (float)winW / (float)winH);
+    batchRect(&s.b, (const float[]){CX - swl, -WT / 2 + CY, swl + CX, WT}, WC);
 
     drawBalls();
     drawActiveWire();
     drawPassiveWire();
     rTris(s.b.ni, s.b.i, s.b.v);
     batchClear(&s.b);
+}
+
+static float setMinCamRect(WOpRect r, float ar) {
+    float zx = (2 * ar) / (r.w + 0.001);
+    float zy = 2.0 / (r.h + 0.001);
+    if (zx < zy) {
+        float cy = r.y + r.h / 2;
+        rPipe(zx / ar, zx, -1 - r.x * (zx / ar), -cy * zx);
+        return r.x < 0 ? -r.x : r.x;
+    } else {
+        float cx = r.x + r.w / 2;
+        rPipe(zy / ar, zy, -cx * (zx / ar), -1 - r.y * zy);
+        return (2 * ar) / zy;
+    }
 }
 
 static void drawBalls(void) {
@@ -186,6 +216,7 @@ static void drawBalls(void) {
 }
 
 static void drawBall(float cx, float cy, float a) {
+    // TODO: make the full circles and rings spin too!
     float da = PI * 2 / CSN;
     batchCircle(&s.b, cx, cy, WT / 2, QC, CC);
     batchRing(&s.b, cx, cy, WT / 2 - CCT / 2, CCT, QC, CCC);
