@@ -32,8 +32,8 @@
 #define CSN 8 // Circle Screw Count
 #define CMAXX (-0.5 * WT) // Camera Maximum X
 #define CMAXY (-1.5 * WT)// Camera Maximum Y
-#define CMINW (1.0 * WT) // Camera Minimum W
-#define CMINH (3.0 * WT) // Camera Minimum H
+#define CMINW(rx) ((0.5 - rx) * WT) // Camera Minimum W
+#define CMINH(ry) ((1.5 - ry) * WT) // Camera Minimum H
 
 #define CSC (const uint8_t[]){64, 64, 64} // Circle Screw Color
 #define WC (const uint8_t[]){255, 255, 255} // Wire Color
@@ -136,10 +136,15 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
 }
 
 static void draw(int winW, int winH) {
-    char *w = strcpy(malloc(s.wire.n + 2), s.wire.passive);
-    w[s.wire.n] = s.wire.active;
-    w[s.wire.n + 1] = 0;
-    WOpRect r = wOpGetRect(w);
+    WOpRect r;
+    if (s.animation.on && s.animation.action == 'R') {
+        r = wOpGetRect(s.wire.passive);
+    } else {
+        char *w = wOpCurrW(s.wire.passive, s.wire.active);
+        r = wOpGetRect(w);
+        free(w);
+    }
+
     r.x *= WT;
     r.y *= WT;
     r.w *= WT;
@@ -152,9 +157,9 @@ static void draw(int winW, int winH) {
         r.h += r.y - CMAXY;
         r.y = CMAXY;
     }
-    r.w = MAX(CMINW, r.w);
-    r.h = MAX(CMINH, r.h);
-    free(w);
+    r.w = MAX(CMINW(r.x), r.w);
+    r.h = MAX(CMINH(r.y), r.h);
+
     rViewport(0, 0, winW, winH);
     float swl = setMinCamRect(r, (float)winW / (float)winH);
     batchRect(&s.b, (const float[]){CX - swl, -WT / 2 + CY, swl + CX, WT}, WC);
@@ -482,11 +487,9 @@ static void startAnimation(GLFWwindow *win) {
 
     s.animation.action = action;
 
-    if (right) {
-        if (s.wire.active != 'L') {
-            s.wire.passive[s.wire.n++] = s.wire.active;
-            s.wire.passive[s.wire.n] = '\0';
-        }
+    if (right && s.wire.active != 'L') {
+        s.wire.passive[s.wire.n++] = s.wire.active;
+        s.wire.passive[s.wire.n] = '\0';
         s.wire.active = 'L';
     }
 }

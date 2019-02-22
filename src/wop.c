@@ -361,6 +361,14 @@ static double len(double x1, double y1, double x2, double y2) {
     return sqrt(s(x1 - x2) + s(y1 - y2));
 }
 
+char *wOpCurrW(const char *wire, char wActive) {
+    size_t n = strlen(wire);
+    char *w = strcpy(malloc(n + 2), wire);
+    w[n] = wActive == 'L' ? '\0' : wActive;
+    w[n + 1] = 0;
+    return w;
+}
+
 char *wOpNextW(const char *wire, char wActive, char action) {
     size_t n = strlen(wire);
     char *w = strcpy(malloc(n + 3), wire);
@@ -454,4 +462,47 @@ WOpRect wOpGetRect(const char *w) {
     r.w = r.x < 0 ? r.w - r.x : r.w;
     r.h = r.y < 0 ? r.h - r.y : r.h;
     return r;
+}
+
+WOpRect wOpGetRect2(const char *w0, const char *w1, char action, float dt) {
+    size_t l0 = strlen(w0);
+    char w = l0 ? w0[l0 - 1] : 'L';
+
+    if (w == 'L' && action != 'R') {
+        return (WOpRect){0, 0, 0, 0};
+    }
+
+    WOpRect r0 = wOpGetRect(w0);
+
+    if (w == action && w != 'R') {
+        return r0;
+    }
+
+    WOpRect r1 = wOpGetRect(w1);
+
+    if (action == 'U') {
+        if (w == 'D') {
+            // TODO 1
+        } else { // R
+            // TODO 2
+        }
+    } else if (action == 'D') {
+        if (w == 'U') {
+            // TODO 3
+        } else { // R
+            // TODO 4
+        }
+    } else if (action == 'L') {
+        if (w == 'U') {
+            // TODO 5
+        } else if (w == 'D') {
+            // TODO 6
+        } else { // R
+            // TODO 7
+        }
+    } else if (action == 'R') {
+        // TODO 8
+    }
+
+    return r0;
 }
