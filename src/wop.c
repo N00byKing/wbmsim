@@ -409,7 +409,7 @@ WOpRect wOpGetRect(const char *w0, const char *w1, bool animation, char action, 
     WOpRect r1 = getRect(w1);
     float dt2 = MIN(dt * 2, 1);
     if (action == 'U' || action == 'D') {
-        return linRectInterpolation(r0, r1, sin(dt2 * PI / 2));
+        return linRectInterpolation(r0, r1, dt2);
     } else {
         return linRectInterpolation(r0, r1, dt);
     }
