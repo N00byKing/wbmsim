@@ -1,4 +1,5 @@
 // TODO: test changing WT, CX and CY
+// TODO: make the full circles and rings spin too!
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -223,7 +224,6 @@ static void drawBalls(void) {
 }
 
 static void drawBall(float cx, float cy, float a) {
-    // TODO: make the full circles and rings spin too!
     float da = PI * 2 / CSN;
     batchCircle(&s.b, cx, cy, WT / 2, QC, CC);
     batchRing(&s.b, cx, cy, WT / 2 - CCT / 2, CCT, QC, CCC);

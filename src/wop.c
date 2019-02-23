@@ -46,6 +46,7 @@ static double s(double x);
 static double ctg(double a);
 static double len(double x1, double y1, double x2, double y2);
 static WOpRect getRect(const char *w);
+static WOpRect linRectInterpolation(WOpRect r0, WOpRect r1, float dt);
 
 bool wOpIsValid(const char *w) {
     Curve *c = buildCurve(w);
@@ -392,7 +393,6 @@ char *wOpNextW(const char *wire, char wActive, char action) {
 }
 
 WOpRect wOpGetRect(const char *w0, const char *w1, bool animation, char action, float dt) {
-    // TODO 3
     size_t l0 = strlen(w0);
     char w = l0 ? w0[l0 - 1] : 'L';
 
@@ -402,44 +402,41 @@ WOpRect wOpGetRect(const char *w0, const char *w1, bool animation, char action, 
 
     WOpRect r0 = getRect(w0);
 
-    if (w == action && w != 'R') {
+    if (!animation || (w == action && w != 'R')) {
         return r0;
     }
 
     WOpRect r1 = getRect(w1);
-    WOpRect r = r0;
 
     if (action == 'U') {
         if (w == 'D') {
             // TODO 1
-        } else { // R
+            return r0;
+        } else { // w == R
             // TODO 2
+            return r0;
         }
     } else if (action == 'D') {
         if (w == 'U') {
             // TODO 3
-        } else { // R
+            return r0;
+        } else { // w == R
             // TODO 4
+            return r0;
         }
     } else if (action == 'L') {
         if (w == 'U') {
             // TODO 5
+            return r0;
         } else if (w == 'D') {
             // TODO 6
-        } else { // R
-            r.x += (r1.x - r0.x) * dt;
-            r.y += (r1.y - r0.y) * dt;
-            r.w += (r1.w - r0.w) * dt;
-            r.h += (r1.h - r0.h) * dt;
+            return r0;
+        } else { // w == R
+            return linRectInterpolation(r0, r1, dt);
         }
-    } else if (action == 'R') {
-        r.x += (r1.x - r0.x) * dt;
-        r.y += (r1.y - r0.y) * dt;
-        r.w += (r1.w - r0.w) * dt;
-        r.h += (r1.h - r0.h) * dt;
+    } else { // action == R
+        return linRectInterpolation(r0, r1, dt);
     }
-
-    return r;
 }
 
 static WOpRect getRect(const char *w) {
@@ -514,4 +511,12 @@ static WOpRect getRect(const char *w) {
     r.w = r.x < 0 ? r.w - r.x : r.w;
     r.h = r.y < 0 ? r.h - r.y : r.h;
     return r;
+}
+
+static WOpRect linRectInterpolation(WOpRect r0, WOpRect r1, float dt) {
+    r0.x += (r1.x - r0.x) * dt;
+    r0.y += (r1.y - r0.y) * dt;
+    r0.w += (r1.w - r0.w) * dt;
+    r0.h += (r1.h - r0.h) * dt;
+    return r0;
 }
