@@ -407,34 +407,10 @@ WOpRect wOpGetRect(const char *w0, const char *w1, bool animation, char action, 
     }
 
     WOpRect r1 = getRect(w1);
-
-    if (action == 'U') {
-        if (w == 'D') {
-            // TODO 1
-            return r0;
-        } else { // w == R
-            // TODO 2
-            return r0;
-        }
-    } else if (action == 'D') {
-        if (w == 'U') {
-            // TODO 3
-            return r0;
-        } else { // w == R
-            // TODO 4
-            return r0;
-        }
-    } else if (action == 'L') {
-        if (w == 'U') {
-            // TODO 5
-            return r0;
-        } else if (w == 'D') {
-            // TODO 6
-            return r0;
-        } else { // w == R
-            return linRectInterpolation(r0, r1, dt);
-        }
-    } else { // action == R
+    float dt2 = MIN(dt * 2, 1);
+    if (action == 'U' || action == 'D') {
+        return linRectInterpolation(r0, r1, sin(dt2 * PI / 2));
+    } else {
         return linRectInterpolation(r0, r1, dt);
     }
 }

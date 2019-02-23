@@ -33,7 +33,7 @@
 #define CSN 8 // Circle Screw Count
 #define CMAXX (-0.5 * WT) // Camera Maximum X
 #define CMAXY (-1.5 * WT)// Camera Maximum Y
-#define CMINW(rx) ((0.5 - rx) * WT) // Camera Minimum W
+#define CMINW(rx) ((2.5 - rx) * WT) // Camera Minimum W
 #define CMINH(ry) ((1.5 - ry) * WT) // Camera Minimum H
 
 #define CSC (const uint8_t[]){64, 64, 64} // Circle Screw Color
@@ -130,7 +130,7 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
