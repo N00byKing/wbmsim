@@ -36,7 +36,7 @@
 #define CC (const uint8_t[]){128, 128, 128} // Circle Color
 #define CCC (const uint8_t[]){64, 64, 64} // Circle Contour Color
 
-#define DT 1.0 // Animation duration
+float DT = 1.0F; // Standart Animation duration
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -71,7 +71,16 @@ static void stopAnimation(void);
 static void startAnimation(GLFWwindow *win);
 static bool wireWillBeValid(char action);
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    //Check Arguments
+    for (int i = 0; i < argc; i++) {
+        if (argc > i+1 && strcmp(argv[i],"--anim-duration") == 0) {
+            if (atof(argv[i+1]) != 0) {
+                DT = atof(argv[i+1]);
+            }
+        }
+    }
+
     glfwInit();
     GLFWwindow *win = mkWin(WIN_T, OGL_API, OGL_V, VSYNC, MSAA);
     glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
