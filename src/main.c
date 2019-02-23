@@ -1,4 +1,3 @@
-// TODO: make the full circles and rings spin too!
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -221,12 +220,12 @@ static void drawBalls(void) {
 
 static void drawBall(float cx, float cy, float a) {
     float da = PI * 2 / CSN;
-    batchCircle(&s.b, cx, cy, 0.5, QC, CC);
-    batchRing(&s.b, cx, cy, 0.5 - CCT / 2, CCT, QC, CCC);
+    batchCircle(&s.b, cx, cy, 0.5, a, QC, CC);
+    batchRing(&s.b, cx, cy, 0.5 - CCT / 2, CCT, a, QC, CCC);
     for (size_t i = 0; i < CSN; ++i) {
         float x = cos(da * i + a) * CSO + cx;
         float y = sin(da * i + a) * CSO + cy;
-        batchCircle(&s.b, x, y, CSR, QCS, CSC);
+        batchCircle(&s.b, x, y, CSR, a, QCS, CSC);
     }
 }
 
