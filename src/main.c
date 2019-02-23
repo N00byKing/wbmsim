@@ -128,7 +128,7 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
     glfwWindowHint(GLFW_BLUE_BITS, vm->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
 
-    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, mon, NULL);
+    GLFWwindow *win = glfwCreateWindow(vm->width, vm->height, t, NULL, NULL);
     glfwMakeContextCurrent(win);
     glfwSwapInterval(vs);
 
@@ -136,9 +136,18 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
 }
 
 static void draw(int winW, int winH) {
+    float dt = CLAMP(0, (glfwGetTime() - s.animation.start) / DT, 1);
     WOpRect r;
     if (s.animation.on && s.animation.action == 'R') {
-        r = wOpGetRect(s.wire.passive);
+        char *w = wOpNextW(s.wire.passive, s.wire.active, s.animation.action);
+        r = wOpGetRect2(s.wire.passive, w, s.animation.action, dt);
+        free(w);
+    } else if (s.animation.on) {
+        char *w0 = wOpCurrW(s.wire.passive, s.wire.active);
+        char *w1 = wOpNextW(s.wire.passive, s.wire.active, s.animation.action);
+        r = wOpGetRect2(w0, w1, s.animation.action, dt);
+        free(w0);
+        free(w1);
     } else {
         char *w = wOpCurrW(s.wire.passive, s.wire.active);
         r = wOpGetRect(w);

@@ -376,8 +376,8 @@ char *wOpNextW(const char *wire, char wActive, char action) {
         w[n] = '\0';
     } else if (action == 'R') {
         if (wActive == 'L') {
-            w[0] = 'R';
-            w[1] = '\0';
+            w[n + 0] = 'R';
+            w[n + 1] = '\0';
         } else {
             w[n + 0] = wActive;
             w[n + 1] = 'R';
@@ -479,6 +479,7 @@ WOpRect wOpGetRect2(const char *w0, const char *w1, char action, float dt) {
     }
 
     WOpRect r1 = wOpGetRect(w1);
+    WOpRect r = r0;
 
     if (action == 'U') {
         if (w == 'D') {
@@ -498,11 +499,17 @@ WOpRect wOpGetRect2(const char *w0, const char *w1, char action, float dt) {
         } else if (w == 'D') {
             // TODO 6
         } else { // R
-            // TODO 7
+            r.x += (r1.x - r0.x) * dt;
+            r.y += (r1.y - r0.y) * dt;
+            r.w += (r1.w - r0.w) * dt;
+            r.h += (r1.h - r0.h) * dt;
         }
     } else if (action == 'R') {
-        // TODO 8
+        r.x += (r1.x - r0.x) * dt;
+        r.y += (r1.y - r0.y) * dt;
+        r.w += (r1.w - r0.w) * dt;
+        r.h += (r1.h - r0.h) * dt;
     }
 
-    return r0;
+    return r;
 }
