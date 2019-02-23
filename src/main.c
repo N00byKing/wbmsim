@@ -64,6 +64,7 @@ static void exitS(void);
 static void loop(GLFWwindow *win);
 static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa);
 static void draw(int winW, int winH);
+static void setupCameraAndDrawDeadWire(int winW, int winH);
 static float setMinCamRect(WOpRect r, float ar);
 static void drawBalls(void);
 static void drawBall(float cx, float cy, float a);
@@ -136,23 +137,21 @@ static GLFWwindow *mkWin(const char *t, int api, int v, int vs, int aa) {
 }
 
 static void draw(int winW, int winH) {
-    float dt = CLAMP(0, (glfwGetTime() - s.animation.start) / DT, 1);
-    WOpRect r;
-    if (s.animation.on && s.animation.action == 'R') {
-        char *w = wOpNextW(s.wire.passive, s.wire.active, s.animation.action);
-        r = wOpGetRect2(s.wire.passive, w, s.animation.action, dt);
-        free(w);
-    } else if (s.animation.on) {
-        char *w0 = wOpCurrW(s.wire.passive, s.wire.active);
-        char *w1 = wOpNextW(s.wire.passive, s.wire.active, s.animation.action);
-        r = wOpGetRect2(w0, w1, s.animation.action, dt);
-        free(w0);
-        free(w1);
-    } else {
-        char *w = wOpCurrW(s.wire.passive, s.wire.active);
-        r = wOpGetRect(w);
-        free(w);
-    }
+    setupCameraAndDrawDeadWire(winW, winH);
+    drawBalls();
+    drawActiveWire();
+    drawPassiveWire();
+    rTris(s.b.ni, s.b.i, s.b.v);
+    batchClear(&s.b);
+}
+
+static void setupCameraAndDrawDeadWire(int winW, int winH) {
+    float dt = s.animation.on ? CLAMP(0, (glfwGetTime() - s.animation.start) / DT, 1) : 0;
+    char *w0 = wOpCurrW(s.wire.passive, s.wire.active);
+    char *w1 = wOpNextW(s.wire.passive, s.wire.active, s.animation.action);
+    WOpRect r = wOpGetRect(w0, w1, s.animation.on, s.animation.action, dt);
+    free(w1);
+    free(w0);
 
     r.x *= WT;
     r.y *= WT;
@@ -172,12 +171,6 @@ static void draw(int winW, int winH) {
     rViewport(0, 0, winW, winH);
     float swl = setMinCamRect(r, (float)winW / (float)winH);
     batchRect(&s.b, (const float[]){CX - swl, -WT / 2 + CY, swl + CX, WT}, WC);
-
-    drawBalls();
-    drawActiveWire();
-    drawPassiveWire();
-    rTris(s.b.ni, s.b.i, s.b.v);
-    batchClear(&s.b);
 }
 
 static float setMinCamRect(WOpRect r, float ar) {

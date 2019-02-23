@@ -45,6 +45,7 @@ static size_t collCircleCircle(Circle a, Circle b, double *x, double *y);
 static double s(double x);
 static double ctg(double a);
 static double len(double x1, double y1, double x2, double y2);
+static WOpRect getRect(const char *w);
 
 bool wOpIsValid(const char *w) {
     Curve *c = buildCurve(w);
@@ -364,7 +365,7 @@ static double len(double x1, double y1, double x2, double y2) {
 char *wOpCurrW(const char *wire, char wActive) {
     size_t n = strlen(wire);
     char *w = strcpy(malloc(n + 2), wire);
-    w[n] = wActive == 'L' ? '\0' : wActive;
+    w[n + 0] = wActive == 'L' ? '\0' : wActive;
     w[n + 1] = 0;
     return w;
 }
@@ -390,7 +391,58 @@ char *wOpNextW(const char *wire, char wActive, char action) {
     return w;
 }
 
-WOpRect wOpGetRect(const char *w) {
+WOpRect wOpGetRect(const char *w0, const char *w1, bool animation, char action, float dt) {
+    // TODO 3
+    size_t l0 = strlen(w0);
+    char w = l0 ? w0[l0 - 1] : 'L';
+
+    if (w == 'L' && action != 'R') {
+        return (WOpRect){0, 0, 0, 0};
+    }
+
+    WOpRect r0 = getRect(w0);
+
+    if (w == action && w != 'R') {
+        return r0;
+    }
+
+    WOpRect r1 = getRect(w1);
+    WOpRect r = r0;
+
+    if (action == 'U') {
+        if (w == 'D') {
+            // TODO 1
+        } else { // R
+            // TODO 2
+        }
+    } else if (action == 'D') {
+        if (w == 'U') {
+            // TODO 3
+        } else { // R
+            // TODO 4
+        }
+    } else if (action == 'L') {
+        if (w == 'U') {
+            // TODO 5
+        } else if (w == 'D') {
+            // TODO 6
+        } else { // R
+            r.x += (r1.x - r0.x) * dt;
+            r.y += (r1.y - r0.y) * dt;
+            r.w += (r1.w - r0.w) * dt;
+            r.h += (r1.h - r0.h) * dt;
+        }
+    } else if (action == 'R') {
+        r.x += (r1.x - r0.x) * dt;
+        r.y += (r1.y - r0.y) * dt;
+        r.w += (r1.w - r0.w) * dt;
+        r.h += (r1.h - r0.h) * dt;
+    }
+
+    return r;
+}
+
+static WOpRect getRect(const char *w) {
     WOpRect r = {0, 0, 0, 0};
     size_t l = strlen(w);
     double x = 0;
@@ -461,55 +513,5 @@ WOpRect wOpGetRect(const char *w) {
     }
     r.w = r.x < 0 ? r.w - r.x : r.w;
     r.h = r.y < 0 ? r.h - r.y : r.h;
-    return r;
-}
-
-WOpRect wOpGetRect2(const char *w0, const char *w1, char action, float dt) {
-    size_t l0 = strlen(w0);
-    char w = l0 ? w0[l0 - 1] : 'L';
-
-    if (w == 'L' && action != 'R') {
-        return (WOpRect){0, 0, 0, 0};
-    }
-
-    WOpRect r0 = wOpGetRect(w0);
-
-    if (w == action && w != 'R') {
-        return r0;
-    }
-
-    WOpRect r1 = wOpGetRect(w1);
-    WOpRect r = r0;
-
-    if (action == 'U') {
-        if (w == 'D') {
-            // TODO 1
-        } else { // R
-            // TODO 2
-        }
-    } else if (action == 'D') {
-        if (w == 'U') {
-            // TODO 3
-        } else { // R
-            // TODO 4
-        }
-    } else if (action == 'L') {
-        if (w == 'U') {
-            // TODO 5
-        } else if (w == 'D') {
-            // TODO 6
-        } else { // R
-            r.x += (r1.x - r0.x) * dt;
-            r.y += (r1.y - r0.y) * dt;
-            r.w += (r1.w - r0.w) * dt;
-            r.h += (r1.h - r0.h) * dt;
-        }
-    } else if (action == 'R') {
-        r.x += (r1.x - r0.x) * dt;
-        r.y += (r1.y - r0.y) * dt;
-        r.w += (r1.w - r0.w) * dt;
-        r.h += (r1.h - r0.h) * dt;
-    }
-
     return r;
 }
