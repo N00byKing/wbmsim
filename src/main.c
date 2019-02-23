@@ -74,6 +74,7 @@ static bool wireWillBeValid(char action);
 int main(void) {
     glfwInit();
     GLFWwindow *win = mkWin(WIN_T, OGL_API, OGL_V, VSYNC, MSAA);
+    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     rInit();
     initS();
 
@@ -109,6 +110,10 @@ static void loop(GLFWwindow *win) {
 
         stopAnimation();
         startAnimation(win);
+
+        if (glfwGetKey(win, GLFW_KEY_ESCAPE) || glfwGetKey(win, GLFW_KEY_Q)) {
+            glfwSetWindowShouldClose(win, true);
+        }
     }
 }
 
